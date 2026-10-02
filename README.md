@@ -8,6 +8,7 @@ One company-scoped API for document extraction, PDF and image tools, media proce
 - [OpenAPI v1](openapi-v1.json) · [Developer guide](developer-guide.md)
 - [Python quickstart](quickstart.py) · [Node.js quickstart](quickstart.mjs)
 - [Postman public documentation](https://documenter.getpostman.com/view/58677341/2sBYHNWi4n) · [Collection](Skavio-Processing-API.postman_collection.json)
+- [DEV.to integration article](https://dev.to/skavioeu/building-a-retry-safe-file-processing-api-estimates-idempotency-and-signed-webhooks-32p6)
 - [Webhook verification](verify_webhook.py)
 
 **API route version:** /v1. **Contract snapshot:** 1.1.0, captured 2026-10-02.
