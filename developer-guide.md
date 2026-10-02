@@ -1,6 +1,6 @@
 # Skavio Processing API developer guide
 
-Contract snapshot: **1.1.0**, 2026-10-02. API route version: **/v1**.
+Contract snapshot: **1.2.0**, 2026-10-02. API route version: **/v1**.
 
 Live documentation: https://www.skavio.eu/api/docs/
 
@@ -59,7 +59,7 @@ See openapi-v1.json for all endpoint methods, authentication requirements and sc
 
 flow-extract accepts PDF, images and UTF-8 text. Every input document produces one document row; line items use a separate worksheet. Output: XLSX, CSV and JSON. Fields use unique names starting with a letter and containing letters, numbers or underscores, maximum 64 characters and 30 fields. Metadata names items, warnings, evidence, review_required and human_review are reserved. Missing values are null. Evidence is checked against the source text; this is an aid to review, not a guarantee of correctness.
 
-transcribe and meeting accept one audio or video source. Normal file operations accept one source; pdf-merge accepts 2–20 PDFs. Run separate jobs for image or media batches. Saved workflows currently support document extraction.
+transcribe and meeting accept one audio or video source. Normal file operations accept one source; pdf-merge accepts 2–20 PDFs. Use /v1/batches for image or media batches of up to 100 items. Saved workflows currently support document extraction.
 
 
 

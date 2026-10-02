@@ -156,3 +156,5 @@ Grouped Flow inputs use the same `items` shape. Optional `webhook_id` must belon
 
 `GET /v1/batches` lists recent company batches. `DELETE /v1/batches/{batch_id}` deletes terminal result/source specifications while preserving accounting. Source/result retention is seven days. A repeated-failure guard may return 429; contact support rather than continuously resubmitting failing sources. Save exact payloads, keys and returned IDs in durable storage.
 
+
+Batch starters: [Python](batch_quickstart.py) · [Node.js](batch_quickstart.mjs) · [Batch guide](batch-guide.md). Set `SKAVIO_API_KEY`, `SKAVIO_UPLOAD_IDS` (JSON array from upload), and a persisted `SKAVIO_BATCH_IDEMPOTENCY_KEY`. The examples poll and print authenticated result paths; archive results before retention expires.
