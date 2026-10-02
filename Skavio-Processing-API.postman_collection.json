@@ -1,8 +1,8 @@
 {
   "info": {
-    "name": "Skavio Processing API v1",
+    "name": "Skavio Processing API v1 \u2014 batch 1.2.0",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "# Skavio Processing API\n\nOne company-scoped API for document extraction, PDF and image tools, media processing, transcription and meetings.\n\n- [Product and pricing](https://www.skavio.eu/api/)\n- [Live developer documentation](https://www.skavio.eu/api/docs/)\n- [Company workspace: register and create an API key](https://www.skavio.eu/dashboard/)\n- [OpenAPI v1](openapi-v1.json) · [Developer guide](developer-guide.md)\n- [Python quickstart](quickstart.py) · [Node.js quickstart](quickstart.mjs)\n- [Postman collection](Skavio-Processing-API.postman_collection.json)\n- [Webhook verification](verify_webhook.py)\n\n**API route version:** /v1. **Contract snapshot:** 1.1.0, captured 2026-10-02.\nThis repository contains the public developer kit. The hosted processing service requires a Skavio account and credits.\n\n## First result\n\n1. Register, create a company profile and generate a read/write key in the company workspace. Copy it once and keep it server-side.\n2. Upload a source using multipart field `files`.\n3. Call `POST /v1/estimate` without starting processing.\n4. Set `max_credits` to the returned `estimated_credits`.\n5. Submit `POST /v1/jobs` with a stable `Idempotency-Key`.\n6. Poll the returned job ID until completed or failed; download through the authenticated result paths.\n\nThe included invoice is **synthetic**, contains no customer data, and can be used for an extraction test.\n\n### Python 3.10+\n\n```bash\npython -m venv .venv\n. .venv/bin/activate\npip install -r requirements.txt\n# Set SKAVIO_API_KEY securely in your local environment.\nexport SKAVIO_IDEMPOTENCY_KEY=\"your-persisted-invoice-request-001\"\npython quickstart.py\n```\n\n### Node.js 22+\n\n```bash\n# Set SKAVIO_API_KEY securely in your local environment.\nexport SKAVIO_IDEMPOTENCY_KEY=\"your-persisted-invoice-request-002\"\nnode quickstart.mjs\n```\n\nBoth examples use `sample-invoice.txt`; set `SKAVIO_SOURCE` to a PDF/image/text source to change it. They estimate cost before submission and write JSON output into `results/`.\nFor intentional processing of a different source or changed payload, use a **new** idempotency key.\nThe examples are server-side starters, not a full SDK or a durable workflow engine.\n\n### Postman\n\nImport the collection or fork its public workspace copy. Set **your own local/private environment** variable `api_key`; never save a real key in the public collection. Set `source_file` to a local source. Run Upload → Estimate → Submit → Job status → Download. Poll every 3–10 seconds until the job is terminal before downloading.\nRequests cover the API-key processing endpoints; administration, key creation, billing and webhook registration use an interactive company administrator session in the dashboard.\nBefore a new business request, clear `upload_id`, `job_id`, `download_path`, `max_credits` and `idempotency_key` in your private environment. Preserve the idempotency key when retrying the same submission.\n\n## What can I process?\n\n| Workflow | Operations |\n| --- | --- |\n| Documents | `flow-extract` → XLSX, CSV, JSON; chosen fields, evidence, review flags |\n| PDFs | merge, split, extract/delete/rotate pages, compression, watermark, page numbering, protect/unlock with your password, OCR |\n| Images | resize/crop/rotate/flip, compression, format conversion, OCR |\n| Audio/video | conversion, trimming, compression; video rotation/resolution/mute |\n| Speech | `transcribe`, `meeting` |\n\n[Capabilities snapshot](capabilities.json) lists exact operation names. Query `GET /v1/capabilities` for current prices and limits.\nNormal file jobs accept one source; PDF merge accepts 2–20 PDFs; Flow can process multiple document sources. Transcribe and Meeting accept one media source. General multi-operation chaining and arbitrary media/image batch jobs are **not available in this release**.\n\n## Credits and price control\n\nAll web tools and API share a prepaid company wallet. No unlimited processing entitlement is advertised in this kit.\nThe server measures bytes, pages and media duration. It reserves the quoted amount on submission, charges that fixed quote on success, and releases the reservation on failure.\nUse `max_credits` to reject unexpectedly expensive submissions and `GET /v1/wallet` to track balance and reservations.\n\n| Operation | Current rate | Minimum |\n| --- | --- | --- |\n| Flow extraction | 100 credits/page | 200/document |\n| OCR | 30 credits/page | 60 |\n| File tools | 30 per started 10 MB or 10 PDF pages, larger basis | 30 |\n| Transcribe | 20 per started minute | 60 |\n| Meeting | 60 per started minute | 500 |\n| Media tools | 20 per started minute | 100 |\n\nCurrent top-ups start at **€6.99 / 6,990 credits**. Bonus packs and monthly company plans have different effective credit prices. See live pricing before purchase. Paid packs do not expire; subscriptions add credits after paid invoices. Opening checkout does not credit the wallet.\nA synthetic single-page Flow input is currently quoted at 200 credits; use the estimate endpoint rather than hard-coding this amount.\n\n## Reliability and integration rules\n\n- `queued → processing → completed | failed`; submission returns HTTP 202.\n- Replaying the identical job request with the same idempotency key returns the same job. Changing its payload returns 409.\n- Persist business request, exact payload, key and job ID in your system. If a response is lost, retry with the original key.\n- A failed job releases credits; an intentional new attempt uses a new key.\n- A platform restart can fail an interrupted job and release its reservation rather than repeat a potentially billed external call.\n- Webhooks deliver at least once; verify HMAC on the raw bytes and deduplicate event IDs. Polling remains supported.\n- Results/source retention is 7 days. Download and archive your results before expiry.\n- Extraction can be wrong. Check evidence and review flags; review line items against the source before downstream accounting.\n\n## Limits (current deployment)\n\n120 requests/minute per key/session; up to 100 files/500 MB per upload; 2 GB source storage/company; 100 pages/PDF; 100 queued jobs/company; one active platform job/company and three globally. Transcribe/Meeting input can be up to 10 hours; File Toolbox media up to 2 hours.\nThese are ceilings, not guaranteed throughput or an SLA. Back off on 429 and transient 5xx responses. Current plans share the processing limits.\n\n## Errors\n\nJSON errors use `detail` (a string or validation details).\n\n| HTTP | Meaning |\n| --- | --- |\n| 401 / 403 | Missing/invalid authentication, scope or permission |\n| 402 | Insufficient credits |\n| 404 | Missing object or another company’s object |\n| 409 | State/idempotency conflict or max-credit rejection |\n| 410 | Expired result |\n| 413 / 422 | Upload/storage limit or invalid source/parameters |\n| 429 | Request/queue limit |\n| 502 / 503 / 504 | Processing/provider unavailable or timeout |\n\n## Security and support\n\nUse `Authorization: Bearer <your-key>` over HTTPS. Never expose keys in frontend apps, URLs, screenshots, commits or shared Postman environments. Company-scoped object IDs cannot access another company.\nCreate/revoke keys and register webhooks in the dashboard. PDF passwords are secrets; do not log payloads.\nReview [Privacy](https://www.skavio.eu/privacy/) and [Terms](https://www.skavio.eu/terms/) before regulated/sensitive inputs. Source processing can involve external providers; backup/provider retention is separate from platform deletion.\n\nReport integration issues through this repository with **synthetic reproductions only**, or contact **work@skavio.eu** privately. Never attach customer documents, keys or billing data to a public issue.\n\n## Versioning\n\nCompatible additions remain under /v1; clients should ignore unknown response fields. Breaking changes require a major API version or an announced migration. [Changelog](CHANGELOG.md).\n\n## License\n\nExample code and documentation in this developer kit are MIT licensed. This does not license the hosted backend or grant free use of the hosted service; service use follows its Terms and credit pricing.\n"
+    "description": "# Skavio Processing API\n\nOne company-scoped API for document extraction, PDF and image tools, media processing, transcription and meetings.\n\n- [Product and pricing](https://www.skavio.eu/api/)\n- [Live developer documentation](https://www.skavio.eu/api/docs/)\n- [Company workspace: register and create an API key](https://www.skavio.eu/dashboard/)\n- [OpenAPI v1](openapi-v1.json) \u00b7 [Developer guide](developer-guide.md)\n- [Python quickstart](quickstart.py) \u00b7 [Node.js quickstart](quickstart.mjs)\n- [Postman public documentation](https://documenter.getpostman.com/view/58677341/2sBYHNWi4n) \u00b7 [Collection](Skavio-Processing-API.postman_collection.json)\n- [DEV.to integration article](https://dev.to/skavioeu/building-a-retry-safe-file-processing-api-estimates-idempotency-and-signed-webhooks-32p6)\n- [Webhook verification](verify_webhook.py)\n\n**API route version:** /v1. **Contract snapshot:** 1.2.0, captured 2026-10-02.\nThis repository contains the public developer kit. The hosted processing service requires a Skavio account and credits.\n\n## First result\n\n1. Register, create a company profile and generate a read/write key in the company workspace. Copy it once and keep it server-side.\n2. Upload a source using multipart field `files`.\n3. Call `POST /v1/estimate` without starting processing.\n4. Set `max_credits` to the returned `estimated_credits`.\n5. Submit `POST /v1/jobs` with a stable `Idempotency-Key`.\n6. Poll the returned job ID until completed or failed; download through the authenticated result paths.\n\nThe included invoice is **synthetic**, contains no customer data, and can be used for an extraction test.\n\n### Python 3.10+\n\n```bash\npython -m venv .venv\n. .venv/bin/activate\npip install -r requirements.txt\n# Set SKAVIO_API_KEY securely in your local environment.\nexport SKAVIO_IDEMPOTENCY_KEY=\"your-persisted-invoice-request-001\"\npython quickstart.py\n```\n\n### Node.js 22+\n\n```bash\n# Set SKAVIO_API_KEY securely in your local environment.\nexport SKAVIO_IDEMPOTENCY_KEY=\"your-persisted-invoice-request-002\"\nnode quickstart.mjs\n```\n\nBoth examples use `sample-invoice.txt`; set `SKAVIO_SOURCE` to a PDF/image/text source to change it. They estimate cost before submission and write JSON output into `results/`.\nFor intentional processing of a different source or changed payload, use a **new** idempotency key.\nThe examples are server-side starters, not a full SDK or a durable workflow engine.\n\n### Postman\n\nImport the collection or fork its public workspace copy. Set **your own local/private environment** variable `api_key`; never save a real key in the public collection. Set `source_file` to a local source. Run Upload \u2192 Estimate \u2192 Submit \u2192 Job status \u2192 Download. Poll every 3\u201310 seconds until the job is terminal before downloading.\nRequests cover the API-key processing endpoints; administration, key creation, billing and webhook registration use an interactive company administrator session in the dashboard.\nBefore a new business request, clear `upload_id`, `job_id`, `download_path`, `max_credits` and `idempotency_key` in your private environment. Preserve the idempotency key when retrying the same submission.\n\n## What can I process?\n\n| Workflow | Operations |\n| --- | --- |\n| Documents | `flow-extract` \u2192 XLSX, CSV, JSON; chosen fields, evidence, review flags |\n| PDFs | merge, split, extract/delete/rotate pages, compression, watermark, page numbering, protect/unlock with your password, OCR |\n| Images | resize/crop/rotate/flip, compression, format conversion, OCR |\n| Audio/video | conversion, trimming, compression; video rotation/resolution/mute |\n| Speech | `transcribe`, `meeting` |\n\n[Capabilities snapshot](capabilities.json) lists exact operation names. Query `GET /v1/capabilities` for current prices and limits.\nNormal file jobs accept one source; PDF merge accepts 2\u201320 PDFs; Flow can process multiple document sources. Transcribe and Meeting accept one media source. Batch processing supports up to 100 items for advertised operations. General multi-operation chaining is not available.\n\n## Credits and price control\n\nAll web tools and API share a prepaid company wallet. No unlimited processing entitlement is advertised in this kit.\nThe server measures bytes, pages and media duration. It reserves the quoted amount on submission, charges that fixed quote on success, and releases the reservation on failure.\nUse `max_credits` to reject unexpectedly expensive submissions and `GET /v1/wallet` to track balance and reservations.\n\n| Operation | Current rate | Minimum |\n| --- | --- | --- |\n| Flow extraction | 100 credits/page | 200/document |\n| OCR | 30 credits/page | 60 |\n| File tools | 30 per started 10 MB or 10 PDF pages, larger basis | 30 |\n| Transcribe | 20 per started minute | 60 |\n| Meeting | 60 per started minute | 500 |\n| Media tools | 20 per started minute | 100 |\n\nCurrent top-ups start at **\u20ac6.99 / 6,990 credits**. Bonus packs and monthly company plans have different effective credit prices. See live pricing before purchase. Paid packs do not expire; subscriptions add credits after paid invoices. Opening checkout does not credit the wallet.\nA synthetic single-page Flow input is currently quoted at 200 credits; use the estimate endpoint rather than hard-coding this amount.\n\n## Reliability and integration rules\n\n- `queued \u2192 processing \u2192 completed | failed`; submission returns HTTP 202.\n- Replaying the identical job request with the same idempotency key returns the same job. Changing its payload returns 409.\n- Persist business request, exact payload, key and job ID in your system. If a response is lost, retry with the original key.\n- A failed job releases credits; an intentional new attempt uses a new key.\n- A platform restart can fail an interrupted job and release its reservation rather than repeat a potentially billed external call.\n- Webhooks deliver at least once; verify HMAC on the raw bytes and deduplicate event IDs. Polling remains supported.\n- Results/source retention is 7 days. Download and archive your results before expiry.\n- Extraction can be wrong. Check evidence and review flags; review line items against the source before downstream accounting.\n\n## Limits (current deployment)\n\n120 requests/minute per key/session; up to 100 files/500 MB per upload; 2 GB source storage/company; 100 pages/PDF; 100 queued jobs/company; one active platform job/company and three globally. Transcribe/Meeting input can be up to 10 hours; File Toolbox media up to 2 hours.\nThese are ceilings, not guaranteed throughput or an SLA. Back off on 429 and transient 5xx responses. Current plans share the processing limits.\n\n## Errors\n\nJSON errors use `detail` (a string or validation details).\n\n| HTTP | Meaning |\n| --- | --- |\n| 401 / 403 | Missing/invalid authentication, scope or permission |\n| 402 | Insufficient credits |\n| 404 | Missing object or another company\u2019s object |\n| 409 | State/idempotency conflict or max-credit rejection |\n| 410 | Expired result |\n| 413 / 422 | Upload/storage limit or invalid source/parameters |\n| 429 | Request/queue limit |\n| 502 / 503 / 504 | Processing/provider unavailable or timeout |\n\n## Security and support\n\nUse `Authorization: Bearer <your-key>` over HTTPS. Never expose keys in frontend apps, URLs, screenshots, commits or shared Postman environments. Company-scoped object IDs cannot access another company.\nCreate/revoke keys and register webhooks in the dashboard. PDF passwords are secrets; do not log payloads.\nReview [Privacy](https://www.skavio.eu/privacy/) and [Terms](https://www.skavio.eu/terms/) before regulated/sensitive inputs. Source processing can involve external providers; backup/provider retention is separate from platform deletion.\n\nReport integration issues through this repository with **synthetic reproductions only**, or contact **work@skavio.eu** privately. Never attach customer documents, keys or billing data to a public issue.\n\n## Versioning\n\nCompatible additions remain under /v1; clients should ignore unknown response fields. Breaking changes require a major API version or an announced migration. [Changelog](CHANGELOG.md).\n\n## License\n\nExample code and documentation in this developer kit are MIT licensed. This does not license the hosted backend or grant free use of the hosted service; service use follows its Terms and credit pricing.\n\n\n## Batch processing \u2014 API 1.2.0\n\nSubmit up to 100 items for any advertised operation through the same processing pipeline. A batch uses one operation/options set and creates ordinary child jobs. Processing remains one active job per company and three globally; a batch does not promise 100 parallel executions.\n\n1. Upload files with `POST /v1/uploads`; retain their upload IDs.\n2. Quote `POST /v1/batches/estimate` using `{\"operation\":\"jpg\",\"upload_ids\":[\"UPLOAD_A\",\"UPLOAD_B\"]}`.\n3. Submit the same payload to `POST /v1/batches` with `max_credits` set to the total quote and a persisted `Idempotency-Key` (8\u2013128 allowed characters).\n4. Poll `GET /v1/batches/{batch_id}`. Each `items[].job` includes status, credits and result download paths. `progress` ranges from 0 to 1; terminal states are `completed`, `partial`, `failed`.\n5. Download `GET /v1/batches/{batch_id}/results.zip` after completion. The archive includes successful results and `manifest.json`. Missing/expired files return 410. ZIP output is limited to 1 GB; use individual authenticated downloads for larger results.\n6. Use `POST /v1/batches/{batch_id}/retry-failed` with a new persisted key to create a separately billed batch of failed items. Retry requests are bound to the original batch. Download successes before retention expires.\n\nCredits reserve atomically for the complete batch. Every child has separate accounting; successful items are charged and failed items release their reservation. Replaying the same submission does not reserve credits again. Changing a request while reusing its key returns 409. Batch items count toward the 100 queued jobs per company.\n\nUse either `upload_ids` (one child per source) or `items` (explicit groups), never both. PDF merge requires groups with 2\u201320 PDFs each:\n\n```json\n{\"operation\":\"pdf-merge\",\"items\":[{\"upload_ids\":[\"PDF_A\",\"PDF_B\"]},{\"upload_ids\":[\"PDF_C\",\"PDF_D\"]}],\"webhook_mode\":\"both\"}\n```\n\nGrouped Flow inputs use the same `items` shape. Optional `webhook_id` must belong to your company. `webhook_mode` accepts `batch` (parent events), `items` (child events), or `both`. Parent events are `batch.completed`, `batch.partial`, `batch.failed`; verify the same signature and deduplicate event IDs. Parent delivery IDs are distinct from child delivery IDs.\n\n`GET /v1/batches` lists recent company batches. `DELETE /v1/batches/{batch_id}` deletes terminal result/source specifications while preserving accounting. Source/result retention is seven days. A repeated-failure guard may return 429; contact support rather than continuously resubmitting failing sources. Save exact payloads, keys and returned IDs in durable storage.\n\n"
   },
   "auth": {
     "type": "bearer",
@@ -24,29 +24,54 @@
       "key": "source_file",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "batch_operation",
+      "value": "jpg",
+      "type": "string"
+    },
+    {
+      "key": "batch_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "batch_max_credits",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "batch_idempotency_key",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "batch_retry_idempotency_key",
+      "value": "",
+      "type": "string"
     }
   ],
   "item": [
     {
-      "name": "01 · Capabilities (public)",
+      "name": "01 \u00b7 Capabilities (public)",
       "request": {
         "method": "GET",
         "header": [],
         "url": "{{base_url}}/v1/capabilities",
-        "description": "01 · Capabilities (public)"
+        "description": "01 \u00b7 Capabilities (public)"
       }
     },
     {
-      "name": "02 · Wallet",
+      "name": "02 \u00b7 Wallet",
       "request": {
         "method": "GET",
         "header": [],
         "url": "{{base_url}}/v1/wallet",
-        "description": "02 · Wallet"
+        "description": "02 \u00b7 Wallet"
       }
     },
     {
-      "name": "03 · Upload source",
+      "name": "03 \u00b7 Upload source",
       "request": {
         "method": "POST",
         "header": [],
@@ -61,7 +86,7 @@
             }
           ]
         },
-        "description": "03 · Upload source"
+        "description": "03 \u00b7 Upload source"
       },
       "event": [
         {
@@ -77,7 +102,7 @@
       ]
     },
     {
-      "name": "04 · Estimate credits",
+      "name": "04 \u00b7 Estimate credits",
       "request": {
         "method": "POST",
         "header": [
@@ -96,7 +121,7 @@
             }
           }
         },
-        "description": "04 · Estimate credits"
+        "description": "04 \u00b7 Estimate credits"
       },
       "event": [
         {
@@ -112,7 +137,7 @@
       ]
     },
     {
-      "name": "05 · Submit idempotent job",
+      "name": "05 \u00b7 Submit idempotent job",
       "request": {
         "method": "POST",
         "header": [
@@ -135,7 +160,7 @@
             }
           }
         },
-        "description": "05 · Submit idempotent job"
+        "description": "05 \u00b7 Submit idempotent job"
       },
       "event": [
         {
@@ -160,12 +185,12 @@
       ]
     },
     {
-      "name": "06 · Job status (poll manually)",
+      "name": "06 \u00b7 Job status (poll manually)",
       "request": {
         "method": "GET",
         "header": [],
         "url": "{{base_url}}/v1/jobs/{{job_id}}",
-        "description": "06 · Job status (poll manually)"
+        "description": "06 \u00b7 Job status (poll manually)"
       },
       "event": [
         {
@@ -181,32 +206,161 @@
       ]
     },
     {
-      "name": "07 · Download completed result (Send and Download)",
+      "name": "07 \u00b7 Download completed result (Send and Download)",
       "request": {
         "method": "GET",
         "header": [],
         "url": "{{base_url}}{{download_path}}",
-        "description": "07 · Download completed result (Send and Download)"
+        "description": "07 \u00b7 Download completed result (Send and Download)"
       }
     },
     {
-      "name": "08 · List jobs",
+      "name": "08 \u00b7 List jobs",
       "request": {
         "method": "GET",
         "header": [],
         "url": "{{base_url}}/v1/jobs",
-        "description": "08 · List jobs"
+        "description": "08 \u00b7 List jobs"
       }
     },
     {
-      "name": "09 · List saved workflows",
+      "name": "09 \u00b7 List saved workflows",
       "request": {
         "method": "GET",
         "header": [],
         "url": "{{base_url}}/v1/workflows",
-        "description": "09 · List saved workflows"
+        "description": "09 \u00b7 List saved workflows"
       }
+    },
+    {
+      "name": "Batch processing",
+      "description": "## Batch processing \u2014 API 1.2.0\n\nSubmit up to 100 items for any advertised operation through the same processing pipeline. A batch uses one operation/options set and creates ordinary child jobs. Processing remains one active job per company and three globally; a batch does not promise 100 parallel executions.\n\n1. Upload files with `POST /v1/uploads`; retain their upload IDs.\n2. Quote `POST /v1/batches/estimate` using `{\"operation\":\"jpg\",\"upload_ids\":[\"UPLOAD_A\",\"UPLOAD_B\"]}`.\n3. Submit the same payload to `POST /v1/batches` with `max_credits` set to the total quote and a persisted `Idempotency-Key` (8\u2013128 allowed characters).\n4. Poll `GET /v1/batches/{batch_id}`. Each `items[].job` includes status, credits and result download paths. `progress` ranges from 0 to 1; terminal states are `completed`, `partial`, `failed`.\n5. Download `GET /v1/batches/{batch_id}/results.zip` after completion. The archive includes successful results and `manifest.json`. Missing/expired files return 410. ZIP output is limited to 1 GB; use individual authenticated downloads for larger results.\n6. Use `POST /v1/batches/{batch_id}/retry-failed` with a new persisted key to create a separately billed batch of failed items. Retry requests are bound to the original batch. Download successes before retention expires.\n\nCredits reserve atomically for the complete batch. Every child has separate accounting; successful items are charged and failed items release their reservation. Replaying the same submission does not reserve credits again. Changing a request while reusing its key returns 409. Batch items count toward the 100 queued jobs per company.\n\nUse either `upload_ids` (one child per source) or `items` (explicit groups), never both. PDF merge requires groups with 2\u201320 PDFs each:\n\n```json\n{\"operation\":\"pdf-merge\",\"items\":[{\"upload_ids\":[\"PDF_A\",\"PDF_B\"]},{\"upload_ids\":[\"PDF_C\",\"PDF_D\"]}],\"webhook_mode\":\"both\"}\n```\n\nGrouped Flow inputs use the same `items` shape. Optional `webhook_id` must belong to your company. `webhook_mode` accepts `batch` (parent events), `items` (child events), or `both`. Parent events are `batch.completed`, `batch.partial`, `batch.failed`; verify the same signature and deduplicate event IDs. Parent delivery IDs are distinct from child delivery IDs.\n\n`GET /v1/batches` lists recent company batches. `DELETE /v1/batches/{batch_id}` deletes terminal result/source specifications while preserving accounting. Source/result retention is seven days. A repeated-failure guard may return 429; contact support rather than continuously resubmitting failing sources. Save exact payloads, keys and returned IDs in durable storage.\n\n",
+      "item": [
+        {
+          "name": "Batch estimate",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/v1/batches/estimate",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "See batch-guide.md. Use private environment variables; preserve keys when replaying the same request.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"operation\": \"{{batch_operation}}\",\n  \"upload_ids\": [\n    \"{{upload_id}}\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estimate accepted\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) pm.environment.set(\"batch_max_credits\", pm.response.json().estimated_credits);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Submit batch",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/v1/batches",
+            "header": [
+              {
+                "key": "Idempotency-Key",
+                "value": "{{batch_idempotency_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "See batch-guide.md. Use private environment variables; preserve keys when replaying the same request.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"operation\": \"{{batch_operation}}\",\n  \"upload_ids\": [\n    \"{{upload_id}}\"\n  ],\n  \"max_credits\": {{batch_max_credits}},\n  \"webhook_mode\": \"batch\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Batch accepted\", () => pm.response.to.have.status(202));",
+                  "if (pm.response.code === 202) pm.environment.set(\"batch_id\", pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Batch list",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/v1/batches",
+            "header": [],
+            "description": "See batch-guide.md. Use private environment variables; preserve keys when replaying the same request."
+          }
+        },
+        {
+          "name": "Batch progress",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/v1/batches/{{batch_id}}",
+            "header": [],
+            "description": "See batch-guide.md. Use private environment variables; preserve keys when replaying the same request."
+          }
+        },
+        {
+          "name": "Download batch ZIP",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/v1/batches/{{batch_id}}/results.zip",
+            "header": [],
+            "description": "See batch-guide.md. Use private environment variables; preserve keys when replaying the same request."
+          }
+        },
+        {
+          "name": "Retry failed items",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/v1/batches/{{batch_id}}/retry-failed",
+            "header": [
+              {
+                "key": "Idempotency-Key",
+                "value": "{{batch_retry_idempotency_key}}"
+              }
+            ],
+            "description": "See batch-guide.md. Use private environment variables; preserve keys when replaying the same request."
+          }
+        },
+        {
+          "name": "Delete terminal batch results",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/v1/batches/{{batch_id}}",
+            "header": [],
+            "description": "See batch-guide.md. Use private environment variables; preserve keys when replaying the same request."
+          }
+        }
+      ]
     }
   ]
 }
-
