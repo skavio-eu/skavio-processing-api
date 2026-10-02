@@ -1,0 +1,212 @@
+{
+  "info": {
+    "name": "Skavio Processing API v1",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "# Skavio Processing API\n\nOne company-scoped API for document extraction, PDF and image tools, media processing, transcription and meetings.\n\n- [Product and pricing](https://www.skavio.eu/api/)\n- [Live developer documentation](https://www.skavio.eu/api/docs/)\n- [Company workspace: register and create an API key](https://www.skavio.eu/dashboard/)\n- [OpenAPI v1](openapi-v1.json) · [Developer guide](developer-guide.md)\n- [Python quickstart](quickstart.py) · [Node.js quickstart](quickstart.mjs)\n- [Postman collection](Skavio-Processing-API.postman_collection.json)\n- [Webhook verification](verify_webhook.py)\n\n**API route version:** /v1. **Contract snapshot:** 1.1.0, captured 2026-10-02.\nThis repository contains the public developer kit. The hosted processing service requires a Skavio account and credits.\n\n## First result\n\n1. Register, create a company profile and generate a read/write key in the company workspace. Copy it once and keep it server-side.\n2. Upload a source using multipart field `files`.\n3. Call `POST /v1/estimate` without starting processing.\n4. Set `max_credits` to the returned `estimated_credits`.\n5. Submit `POST /v1/jobs` with a stable `Idempotency-Key`.\n6. Poll the returned job ID until completed or failed; download through the authenticated result paths.\n\nThe included invoice is **synthetic**, contains no customer data, and can be used for an extraction test.\n\n### Python 3.10+\n\n```bash\npython -m venv .venv\n. .venv/bin/activate\npip install -r requirements.txt\n# Set SKAVIO_API_KEY securely in your local environment.\nexport SKAVIO_IDEMPOTENCY_KEY=\"your-persisted-invoice-request-001\"\npython quickstart.py\n```\n\n### Node.js 22+\n\n```bash\n# Set SKAVIO_API_KEY securely in your local environment.\nexport SKAVIO_IDEMPOTENCY_KEY=\"your-persisted-invoice-request-002\"\nnode quickstart.mjs\n```\n\nBoth examples use `sample-invoice.txt`; set `SKAVIO_SOURCE` to a PDF/image/text source to change it. They estimate cost before submission and write JSON output into `results/`.\nFor intentional processing of a different source or changed payload, use a **new** idempotency key.\nThe examples are server-side starters, not a full SDK or a durable workflow engine.\n\n### Postman\n\nImport the collection or fork its public workspace copy. Set **your own local/private environment** variable `api_key`; never save a real key in the public collection. Set `source_file` to a local source. Run Upload → Estimate → Submit → Job status → Download. Poll every 3–10 seconds until the job is terminal before downloading.\nRequests cover the API-key processing endpoints; administration, key creation, billing and webhook registration use an interactive company administrator session in the dashboard.\nBefore a new business request, clear `upload_id`, `job_id`, `download_path`, `max_credits` and `idempotency_key` in your private environment. Preserve the idempotency key when retrying the same submission.\n\n## What can I process?\n\n| Workflow | Operations |\n| --- | --- |\n| Documents | `flow-extract` → XLSX, CSV, JSON; chosen fields, evidence, review flags |\n| PDFs | merge, split, extract/delete/rotate pages, compression, watermark, page numbering, protect/unlock with your password, OCR |\n| Images | resize/crop/rotate/flip, compression, format conversion, OCR |\n| Audio/video | conversion, trimming, compression; video rotation/resolution/mute |\n| Speech | `transcribe`, `meeting` |\n\n[Capabilities snapshot](capabilities.json) lists exact operation names. Query `GET /v1/capabilities` for current prices and limits.\nNormal file jobs accept one source; PDF merge accepts 2–20 PDFs; Flow can process multiple document sources. Transcribe and Meeting accept one media source. General multi-operation chaining and arbitrary media/image batch jobs are **not available in this release**.\n\n## Credits and price control\n\nAll web tools and API share a prepaid company wallet. No unlimited processing entitlement is advertised in this kit.\nThe server measures bytes, pages and media duration. It reserves the quoted amount on submission, charges that fixed quote on success, and releases the reservation on failure.\nUse `max_credits` to reject unexpectedly expensive submissions and `GET /v1/wallet` to track balance and reservations.\n\n| Operation | Current rate | Minimum |\n| --- | --- | --- |\n| Flow extraction | 100 credits/page | 200/document |\n| OCR | 30 credits/page | 60 |\n| File tools | 30 per started 10 MB or 10 PDF pages, larger basis | 30 |\n| Transcribe | 20 per started minute | 60 |\n| Meeting | 60 per started minute | 500 |\n| Media tools | 20 per started minute | 100 |\n\nCurrent top-ups start at **€6.99 / 6,990 credits**. Bonus packs and monthly company plans have different effective credit prices. See live pricing before purchase. Paid packs do not expire; subscriptions add credits after paid invoices. Opening checkout does not credit the wallet.\nA synthetic single-page Flow input is currently quoted at 200 credits; use the estimate endpoint rather than hard-coding this amount.\n\n## Reliability and integration rules\n\n- `queued → processing → completed | failed`; submission returns HTTP 202.\n- Replaying the identical job request with the same idempotency key returns the same job. Changing its payload returns 409.\n- Persist business request, exact payload, key and job ID in your system. If a response is lost, retry with the original key.\n- A failed job releases credits; an intentional new attempt uses a new key.\n- A platform restart can fail an interrupted job and release its reservation rather than repeat a potentially billed external call.\n- Webhooks deliver at least once; verify HMAC on the raw bytes and deduplicate event IDs. Polling remains supported.\n- Results/source retention is 7 days. Download and archive your results before expiry.\n- Extraction can be wrong. Check evidence and review flags; review line items against the source before downstream accounting.\n\n## Limits (current deployment)\n\n120 requests/minute per key/session; up to 100 files/500 MB per upload; 2 GB source storage/company; 100 pages/PDF; 100 queued jobs/company; one active platform job/company and three globally. Transcribe/Meeting input can be up to 10 hours; File Toolbox media up to 2 hours.\nThese are ceilings, not guaranteed throughput or an SLA. Back off on 429 and transient 5xx responses. Current plans share the processing limits.\n\n## Errors\n\nJSON errors use `detail` (a string or validation details).\n\n| HTTP | Meaning |\n| --- | --- |\n| 401 / 403 | Missing/invalid authentication, scope or permission |\n| 402 | Insufficient credits |\n| 404 | Missing object or another company’s object |\n| 409 | State/idempotency conflict or max-credit rejection |\n| 410 | Expired result |\n| 413 / 422 | Upload/storage limit or invalid source/parameters |\n| 429 | Request/queue limit |\n| 502 / 503 / 504 | Processing/provider unavailable or timeout |\n\n## Security and support\n\nUse `Authorization: Bearer <your-key>` over HTTPS. Never expose keys in frontend apps, URLs, screenshots, commits or shared Postman environments. Company-scoped object IDs cannot access another company.\nCreate/revoke keys and register webhooks in the dashboard. PDF passwords are secrets; do not log payloads.\nReview [Privacy](https://www.skavio.eu/privacy/) and [Terms](https://www.skavio.eu/terms/) before regulated/sensitive inputs. Source processing can involve external providers; backup/provider retention is separate from platform deletion.\n\nReport integration issues through this repository with **synthetic reproductions only**, or contact **work@skavio.eu** privately. Never attach customer documents, keys or billing data to a public issue.\n\n## Versioning\n\nCompatible additions remain under /v1; clients should ignore unknown response fields. Breaking changes require a major API version or an announced migration. [Changelog](CHANGELOG.md).\n\n## License\n\nExample code and documentation in this developer kit are MIT licensed. This does not license the hosted backend or grant free use of the hosted service; service use follows its Terms and credit pricing.\n"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{api_key}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://www.skavio.eu",
+      "type": "string"
+    },
+    {
+      "key": "source_file",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "01 · Capabilities (public)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/v1/capabilities",
+        "description": "01 · Capabilities (public)"
+      }
+    },
+    {
+      "name": "02 · Wallet",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/v1/wallet",
+        "description": "02 · Wallet"
+      }
+    },
+    {
+      "name": "03 · Upload source",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": "{{base_url}}/v1/uploads",
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "files",
+              "type": "file",
+              "src": "{{source_file}}"
+            }
+          ]
+        },
+        "description": "03 · Upload source"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Upload succeeded', () => pm.response.to.have.status(200));",
+              "if (pm.response.code === 200) pm.environment.set('upload_id', pm.response.json().uploads[0].id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 · Estimate credits",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/v1/estimate",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"operation\": \"flow-extract\",\n  \"upload_ids\": [\n    \"{{upload_id}}\"\n  ],\n  \"fields\": [\n    \"supplier\",\n    \"invoice_number\",\n    \"currency\",\n    \"total\"\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": "04 · Estimate credits"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Estimate succeeded', () => pm.response.to.have.status(200));",
+              "if (pm.response.code === 200) pm.environment.set('max_credits', pm.response.json().estimated_credits);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 · Submit idempotent job",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Idempotency-Key",
+            "value": "{{idempotency_key}}"
+          }
+        ],
+        "url": "{{base_url}}/v1/jobs",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"operation\": \"flow-extract\",\n  \"upload_ids\": [\n    \"{{upload_id}}\"\n  ],\n  \"fields\": [\n    \"supplier\",\n    \"invoice_number\",\n    \"currency\",\n    \"total\"\n  ]\n, \"max_credits\": {{max_credits}}\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": "05 · Submit idempotent job"
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (!pm.environment.get('idempotency_key')) pm.environment.set('idempotency_key', pm.variables.replaceIn('{{$guid}}'));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Job accepted', () => pm.response.to.have.status(202));",
+              "if (pm.response.code === 202) pm.environment.set('job_id', pm.response.json().id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 · Job status (poll manually)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/v1/jobs/{{job_id}}",
+        "description": "06 · Job status (poll manually)"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Job status returned', () => pm.response.to.have.status(200));",
+              "if (pm.response.code === 200) { const j = pm.response.json(); if (j.status === 'completed' && j.result?.files?.length) pm.environment.set('download_path', j.result.files.find(f => f.name.endsWith('.json'))?.download_path || j.result.files[0].download_path); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 · Download completed result (Send and Download)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}{{download_path}}",
+        "description": "07 · Download completed result (Send and Download)"
+      }
+    },
+    {
+      "name": "08 · List jobs",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/v1/jobs",
+        "description": "08 · List jobs"
+      }
+    },
+    {
+      "name": "09 · List saved workflows",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/v1/workflows",
+        "description": "09 · List saved workflows"
+      }
+    }
+  ]
+}
+

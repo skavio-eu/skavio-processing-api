@@ -1,0 +1,8 @@
+SYNTHETIC TEST INVOICE — no customer data
+Supplier: Example Logistics Ltd
+Invoice number: DEMO-2026-001
+Currency: EUR
+Subtotal: 100.00
+Tax: 21.00
+Total: 121.00 EUR
+
