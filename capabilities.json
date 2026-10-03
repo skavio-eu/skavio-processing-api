@@ -1,5 +1,5 @@
 {
-  "version": "1.2.0",
+  "version": "1.4.0",
   "file_operations": {
     "image": [
       "image-edit",
@@ -90,11 +90,24 @@
     "transcribe",
     "meeting"
   ],
+  "transcribe_output_formats": [
+    "txt",
+    "docx",
+    "srt",
+    "vtt",
+    "json"
+  ],
+  "speaker_json": {
+    "schema_version": 1,
+    "native_words": true,
+    "anonymous_speaker_segments": true,
+    "identity_verification": "human required"
+  },
   "batch": {
     "enabled": true,
     "max_items": 100,
     "shorthand": "upload_ids fans out one child job per file",
-    "groups": "items supports grouped sources such as 2\u201320 PDFs for pdf-merge",
+    "groups": "items supports grouped sources such as 2–20 PDFs for pdf-merge",
     "webhook_modes": [
       "batch",
       "items",
@@ -104,32 +117,46 @@
     "zip_results_max_bytes": 1073741824
   },
   "rate_limit_per_minute": 120,
-  "company_active_jobs": 1,
-  "global_active_jobs": 3,
+  "company_active_jobs": 4,
+  "global_active_jobs": 4,
   "company_queue_limit": 100,
   "max_files_per_upload": 100,
   "max_total_upload_bytes": 524288000,
   "max_document_pages": 100,
   "retention_days": 7,
   "webhooks": true,
+  "processing_routing": {
+    "mode": "managed",
+    "provider_choice_exposed": false,
+    "local_ai_fallback": false,
+    "provider_outage_queue": true
+  },
   "pricing": {
-    "version": "credits-1.1.0",
+    "version": "pricing-v2",
+    "nominal_credits_per_eur": 1000,
     "minimum_credits": {
-      "flow_per_document": 200,
-      "ocr": 60,
-      "file": 30,
-      "media": 100,
-      "transcribe": 60,
-      "meeting": 500
+      "flow_per_document": 25,
+      "ocr": 3,
+      "ocr_layout": 10,
+      "file": 2,
+      "media": 4,
+      "transcribe": 8,
+      "meeting": 15
     },
-    "flow_credits_per_page": 100,
-    "ocr_credits_per_page": 30,
-    "file_credits_per_10mb": 30,
-    "pdf_credits_per_10pages": 30,
-    "file_quote_basis": "maximum of started 10 MB and, for PDFs, started 10 page units per source",
-    "transcribe_credits_per_minute": 20,
-    "meeting_credits_per_minute": 60,
-    "media_credits_per_minute": 20
+    "flow_credits_per_page": 25,
+    "ocr_credits_per_page": 3,
+    "ocr_layout_credits_per_page": 10,
+    "ocr_operation_rates": {
+      "ocr-txt": 3,
+      "ocr-docx": 10,
+      "ocr-pdf": 10
+    },
+    "file_credits_per_25mb": 2,
+    "pdf_credits_per_10pages": 2,
+    "file_quote_basis": "maximum of started 25 MB and started 10 page units per source",
+    "transcribe_credits_per_minute": 8,
+    "meeting_credits_per_minute": 15,
+    "media_credits_per_minute": 4
   },
   "topups": [
     {
@@ -142,23 +169,23 @@
     },
     {
       "eur": 25,
-      "credits": 27500
+      "credits": 26000
     },
     {
       "eur": 50,
-      "credits": 60000
+      "credits": 53000
     },
     {
       "eur": 100,
-      "credits": 125000
+      "credits": 108000
     },
     {
       "eur": 250,
-      "credits": 325000
+      "credits": 280000
     },
     {
       "eur": 500,
-      "credits": 675000
+      "credits": 570000
     }
   ]
 }

@@ -11,7 +11,7 @@ One company-scoped API for document extraction, PDF and image tools, media proce
 - [DEV.to integration article](https://dev.to/skavioeu/building-a-retry-safe-file-processing-api-estimates-idempotency-and-signed-webhooks-32p6)
 - [Webhook verification](verify_webhook.py)
 
-**API route version:** /v1. **Contract snapshot:** 1.2.0, captured 2026-10-02.
+**API route version:** /v1. **Contract snapshot:** 1.4.0 + Pricing V2, captured 2026-10-03.
 This repository contains the public developer kit. The hosted processing service requires a Skavio account and credits.
 
 ## First result
@@ -73,17 +73,23 @@ All web tools and API share a prepaid company wallet. No unlimited processing en
 The server measures bytes, pages and media duration. It reserves the quoted amount on submission, charges that fixed quote on success, and releases the reservation on failure.
 Use `max_credits` to reject unexpectedly expensive submissions and `GET /v1/wallet` to track balance and reservations.
 
-| Operation | Current rate | Minimum |
-| --- | --- | --- |
-| Flow extraction | 100 credits/page | 200/document |
-| OCR | 30 credits/page | 60 |
-| File tools | 30 per started 10 MB or 10 PDF pages, larger basis | 30 |
-| Transcribe | 20 per started minute | 60 |
-| Meeting | 60 per started minute | 500 |
-| Media tools | 20 per started minute | 100 |
+| Operation | Pricing V2 |
+| --- | --- |
+| Raw OCR text (ocr-txt) | 3 credits/page |
+| OCR document output (ocr-docx / ocr-pdf) | 10 credits/page |
+| Flow extraction and export | 25 credits/page |
+| PDF/image/office/text file operation | 2 per started 25 MB or 10 pages, larger basis per source |
+| Transcribe | 8 per started minute |
+| Meeting | 15 per started minute |
+| File Toolbox audio/video | 4 per started minute |
 
-Current top-ups start at **€6.99 / 6,990 credits**. Bonus packs and monthly company plans have different effective credit prices. See live pricing before purchase. Paid packs do not expire; subscriptions add credits after paid invoices. Opening checkout does not credit the wallet.
-A synthetic single-page Flow input is currently quoted at 200 credits; use the estimate endpoint rather than hard-coding this amount.
+Nominally 1 EUR = 1,000 credits. Top-ups: EUR10/10,000; EUR25/26,000; EUR50/53,000; EUR100/108,000; EUR250/280,000; EUR500/570,000. A retail EUR6.99/6,990 pack is also available.
+
+Monthly plans: Starter EUR29/30,000 credits; Business EUR79/85,000; Pro EUR199/225,000; Enterprise EUR499/600,000. Paid credits never expire; monthly credits roll over. Current plans share the deployment processing limits.
+
+Web tools and API share one wallet. Submit reserves the measured quote; success charges it once; a permanent failure releases it. Temporary provider outages keep jobs queued with durable checkpoints and reserved credits. Existing quoted jobs and purchased checkout/subscription offers retain their original amounts.
+
+Canonical live catalog: GET /v1/pricing. Always estimate before submission and use max_credits rather than hard-coding a rate.
 
 ## Reliability and integration rules
 
@@ -91,14 +97,14 @@ A synthetic single-page Flow input is currently quoted at 200 credits; use the e
 - Replaying the identical job request with the same idempotency key returns the same job. Changing its payload returns 409.
 - Persist business request, exact payload, key and job ID in your system. If a response is lost, retry with the original key.
 - A failed job releases credits; an intentional new attempt uses a new key.
-- A platform restart can fail an interrupted job and release its reservation rather than repeat a potentially billed external call.
+- Provider outages and service restarts preserve durable jobs/checkpoints and reservations; permanent failures release them.
 - Webhooks deliver at least once; verify HMAC on the raw bytes and deduplicate event IDs. Polling remains supported.
 - Results/source retention is 7 days. Download and archive your results before expiry.
 - Extraction can be wrong. Check evidence and review flags; review line items against the source before downstream accounting.
 
 ## Limits (current deployment)
 
-120 requests/minute per key/session; up to 100 files/500 MB per upload; 2 GB source storage/company; 100 pages/PDF; 100 queued jobs/company; one active platform job/company and three globally. Transcribe/Meeting input can be up to 10 hours; File Toolbox media up to 2 hours.
+120 requests/minute per key/session; up to 100 files/500 MB per upload; 2 GB source storage/company; 100 pages/PDF; 100 queued jobs/company; 4 active platform jobs/company and 4 globally. Transcribe/Meeting input can be up to 10 hours; File Toolbox media up to 2 hours.
 These are ceilings, not guaranteed throughput or an SLA. Back off on 429 and transient 5xx responses. Current plans share the processing limits.
 
 ## Errors
@@ -133,9 +139,9 @@ Compatible additions remain under /v1; clients should ignore unknown response fi
 Example code and documentation in this developer kit are MIT licensed. This does not license the hosted backend or grant free use of the hosted service; service use follows its Terms and credit pricing.
 
 
-## Batch processing — API 1.2.0
+## Batch processing — API 1.4.0
 
-Submit up to 100 items for any advertised operation through the same processing pipeline. A batch uses one operation/options set and creates ordinary child jobs. Processing remains one active job per company and three globally; a batch does not promise 100 parallel executions.
+Submit up to 100 items for any advertised operation through the same processing pipeline. A batch uses one operation/options set and creates ordinary child jobs. Processing remains 4 active jobs per company and 4 globally; a batch does not promise 100 parallel executions.
 
 1. Upload files with `POST /v1/uploads`; retain their upload IDs.
 2. Quote `POST /v1/batches/estimate` using `{"operation":"jpg","upload_ids":["UPLOAD_A","UPLOAD_B"]}`.

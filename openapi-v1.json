@@ -3,7 +3,7 @@
   "info": {
     "title": "Skavio Processing API",
     "description": "Company scoped file, document and audio processing. Bearer API key or same-origin web session. Idempotency-Key required for jobs.",
-    "version": "1.2.0"
+    "version": "1.4.0"
   },
   "paths": {
     "/v1/batches/estimate": {
@@ -1143,6 +1143,163 @@
           },
           "413": {
             "description": "Request too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate or queue limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Processing unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Source or result expired"
+          }
+        }
+      }
+    },
+    "/v1/pricing": {
+      "get": {
+        "tags": [
+          "Skavio processing API"
+        ],
+        "summary": "Canonical Pricing V2 catalog",
+        "operationId": "public_pricing_v1_pricing_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Insufficient credits",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Object not found in company",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "detail": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid request or source",
             "content": {
               "application/json": {
                 "schema": {
@@ -5326,7 +5483,8 @@
                     "enum": [
                       "starter",
                       "business",
-                      "pro"
+                      "pro",
+                      "enterprise"
                     ]
                   }
                 },
@@ -6901,7 +7059,7 @@
   },
   "servers": [
     {
-      "url": "http://127.0.0.1:18080"
+      "url": "https://www.skavio.eu"
     }
   ],
   "security": [

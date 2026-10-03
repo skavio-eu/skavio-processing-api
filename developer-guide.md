@@ -1,6 +1,6 @@
 # Skavio Processing API developer guide
 
-Contract snapshot: **1.2.0**, 2026-10-02. API route version: **/v1**.
+Contract snapshot: **1.4.0 + Pricing V2**, 2026-10-03. API route version: **/v1**.
 
 Live documentation: https://www.skavio.eu/api/docs/
 
@@ -93,7 +93,7 @@ queued → processing → completed | failed. A job ID is returned immediately w
 
 Use a unique Idempotency-Key for each business request, 8–128 characters: letters, numbers, underscore, dot, colon or dash. Retrying the identical request with the same key returns the same job without charging again. Reusing a key with different parameters returns 409. On a lost submission response, retry with the original key; do not create another key.
 
-Failed jobs release reserved credits. Submit a new job with a new idempotency key when you intentionally retry a terminal failure. If the server restarts during processing, the interrupted platform job is failed and credits are released rather than automatically repeating a potentially billed external model call. An upstream worker may still finish; its result is not silently billed again.
+Failed jobs release reserved credits. Submit a new job with a new idempotency key when you intentionally retry a terminal failure. Temporary provider outages and restarts preserve queued jobs, retry schedules, durable checkpoints and reservations. Permanent failures release credits; replays do not charge again.
 
 Authenticated downloads use the paths in result.files; no public result URL or API key in a query string. Use the dashboard to correct extracted scalar fields and regenerate exports without another processing charge. Review changes are recorded; line items must still be checked against the original. Results expire after 7 days. Preserve them in your system before expiration.
 
@@ -103,13 +103,23 @@ Authenticated downloads use the paths in result.files; no public result URL or A
 
 POST /v1/estimate returns the price without starting work. The current contract reserves and charges that fixed quote on success. A failed job releases the full reservation. Estimates use server-measured source bytes, PDF pages and media duration.
 
-File operations: 30 credits per started 10 MB or 10 PDF pages (larger basis). OCR: 30 per page, minimum 60. Flow: 100 per page, minimum 200 per document. Transcribe: 20 per started minute, minimum 60. Meeting: 60 per started minute, minimum 500. Media tools: 20 per started minute, minimum 100. Text extraction counts one page per started 4,000 source bytes. Image sources count as one page. Encrypted PDFs report 0 pages on upload; pdf-unlock validates your password and measures the real page count before quoting. Other operations require an unlocked source. Long document text is limited to prevent unexpectedly expensive extraction.
+| Operation | Pricing V2 |
+| --- | --- |
+| Raw OCR text (ocr-txt) | 3 credits/page |
+| OCR document output (ocr-docx / ocr-pdf) | 10 credits/page |
+| Flow extraction and export | 25 credits/page |
+| PDF/image/office/text file operation | 2 per started 25 MB or 10 pages, larger basis per source |
+| Transcribe | 8 per started minute |
+| Meeting | 15 per started minute |
+| File Toolbox audio/video | 4 per started minute |
 
-Monthly company plans: Starter €29 for 20,000 credits, Business €79 for 80,000 and Pro €199 for 250,000. Credits are added after paid invoices and roll over. Manage or cancel through the billing portal. Each plan currently uses the same processing limits; priority service is not advertised.
+Nominally 1 EUR = 1,000 credits. Top-ups: EUR10/10,000; EUR25/26,000; EUR50/53,000; EUR100/108,000; EUR250/280,000; EUR500/570,000. A retail EUR6.99/6,990 pack is also available.
 
-Paid credit packs do not expire. Bonus packs change the effective euro price per credit. The dashboard shows credit units, not a refundable cash balance. All web tools and API now use the same prepaid wallet. Company admins can start a Stripe card checkout and reconcile a completed payment; signed Stripe webhooks reconcile it automatically. A checkout being opened does not add credits.
+Monthly plans: Starter EUR29/30,000 credits; Business EUR79/85,000; Pro EUR199/225,000; Enterprise EUR499/600,000. Paid credits never expire; monthly credits roll over. Current plans share the deployment processing limits.
 
+Web tools and API share one wallet. Submit reserves the measured quote; success charges it once; a permanent failure releases it. Temporary provider outages keep jobs queued with durable checkpoints and reserved credits. Existing quoted jobs and purchased checkout/subscription offers retain their original amounts.
 
+Canonical live catalog: GET /v1/pricing. Always estimate before submission and use max_credits rather than hard-coding a rate.
 
 ## Keys, company scope and teams
 
@@ -257,9 +267,9 @@ The API lives under /v1. Clients should ignore unknown response fields. Incompat
 
 
 
-## Batch processing — API 1.2.0
+## Batch processing — API 1.4.0
 
-Submit up to 100 items for any advertised operation through the same processing pipeline. A batch uses one operation/options set and creates ordinary child jobs. Processing remains one active job per company and three globally; a batch does not promise 100 parallel executions.
+Submit up to 100 items for any advertised operation through the same processing pipeline. A batch uses one operation/options set and creates ordinary child jobs. Processing remains 4 active jobs per company and 4 globally; a batch does not promise 100 parallel executions.
 
 1. Upload files with `POST /v1/uploads`; retain their upload IDs.
 2. Quote `POST /v1/batches/estimate` using `{"operation":"jpg","upload_ids":["UPLOAD_A","UPLOAD_B"]}`.
