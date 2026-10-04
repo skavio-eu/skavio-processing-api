@@ -6,12 +6,23 @@ One company-scoped API for document extraction, PDF and image tools, media proce
 - [Live developer documentation](https://www.skavio.eu/api/docs/)
 - [Company workspace: register and create an API key](https://www.skavio.eu/dashboard/)
 - [OpenAPI v1](openapi-v1.json) · [Developer guide](developer-guide.md)
-- [Python quickstart](quickstart.py) · [Node.js quickstart](quickstart.mjs)
+- [Python quickstart](quickstart.py) · [Node.js quickstart](quickstart.mjs) · [Bulk guide](bulk-guide.md)
 - [Postman public documentation](https://documenter.getpostman.com/view/58677341/2sBYHNWi4n) · [Collection](Skavio-Processing-API.postman_collection.json)
 - [DEV.to integration article](https://dev.to/skavioeu/building-a-retry-safe-file-processing-api-estimates-idempotency-and-signed-webhooks-32p6)
 - [Webhook verification](verify_webhook.py)
 
-**API route version:** /v1. **Contract snapshot:** 1.4.0 + Pricing V2, captured 2026-10-03.
+**API route version:** /v1. **Contract snapshot:** 1.5.0 + Pricing V2, captured 2026-10-04.
+
+## What is new in API 1.5.0
+
+- **Bulk manifests up to 100,000 items** with immutable manifest pages of 1–100 items and bounded incremental child admission.
+- **Storage-aware admission** through `GET /v1/storage`, declared input/output/scratch envelopes and durable storage reservations.
+- **Resume and failed-item retry** for large workloads without resubmitting successful items.
+- **Crash/restart recovery** for scheduler state, reservations, checkpoints and provider-intent reconciliation.
+- **Fair scheduling across companies** while preserving the current ceiling of 4 active platform jobs globally.
+- Existing **100-item batches** remain available for simpler workloads.
+
+Start with [Bulk processing guide](bulk-guide.md) or the [Python bulk quickstart](bulk_quickstart.py).
 This repository contains the public developer kit. The hosted processing service requires a Skavio account and credits.
 
 ## First result
@@ -65,7 +76,7 @@ Before a new business request, clear `upload_id`, `job_id`, `download_path`, `ma
 | Speech | `transcribe`, `meeting` |
 
 [Capabilities snapshot](capabilities.json) lists exact operation names. Query `GET /v1/capabilities` for current prices and limits.
-Normal file jobs accept one source; PDF merge accepts 2–20 PDFs; Flow can process multiple document sources. Transcribe and Meeting accept one media source. Batch processing supports up to 100 items for advertised operations. General multi-operation chaining is not available.
+Normal file jobs accept one source; PDF merge accepts 2–20 PDFs; Flow can process multiple document sources. Transcribe and Meeting accept one media source. Batch processing supports up to 100 items. API 1.5.0 bulk manifests support up to 100,000 items with incremental dispatch; see [bulk-guide.md](bulk-guide.md). General multi-operation chaining is not available.
 
 ## Credits and price control
 
@@ -139,7 +150,7 @@ Compatible additions remain under /v1; clients should ignore unknown response fi
 Example code and documentation in this developer kit are MIT licensed. This does not license the hosted backend or grant free use of the hosted service; service use follows its Terms and credit pricing.
 
 
-## Batch processing — API 1.4.0
+## Batch processing — API 1.5.0
 
 Submit up to 100 items for any advertised operation through the same processing pipeline. A batch uses one operation/options set and creates ordinary child jobs. Processing remains 4 active jobs per company and 4 globally; a batch does not promise 100 parallel executions.
 

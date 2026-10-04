@@ -1,3 +1,7 @@
+# 1.5.0 — 2026-10-04
+
+Added resumable bulk manifests for workloads up to 100,000 items, immutable 1–100 item manifest pages, bounded incremental child admission, authenticated paginated item/output views, storage-aware admission and `GET /v1/storage`, resume after storage/auth/credit/capacity pauses, failed-item-only retry, durable scheduler/recovery state, provider-intent reconciliation, and fair rotation across companies. Normal 100-item batches remain supported. Current processing ceiling remains 4 active platform jobs globally and up to 4 for one company when capacity is available.
+
 # 1.4.0 + Pricing V2 — 2026-10-03
 
 Shared canonical pricing for web/API/billing; new operation rates, bonus packs and Enterprise plan. GET /v1/pricing exposes the full catalog. OpenAI document processing and AssemblyAI speech processing use durable provider retry queues and checkpoints. Native-word JSON and anonymous speaker segments are available for Transcribe. Existing quoted jobs, checkouts and purchased subscriptions retain their original credit offers.

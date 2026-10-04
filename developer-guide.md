@@ -1,6 +1,6 @@
 # Skavio Processing API developer guide
 
-Contract snapshot: **1.4.0 + Pricing V2**, 2026-10-03. API route version: **/v1**.
+Contract snapshot: **1.5.0 + Pricing V2**, 2026-10-04. API route version: **/v1**.
 
 Live documentation: https://www.skavio.eu/api/docs/
 
@@ -59,7 +59,7 @@ See openapi-v1.json for all endpoint methods, authentication requirements and sc
 
 flow-extract accepts PDF, images and UTF-8 text. Every input document produces one document row; line items use a separate worksheet. Output: XLSX, CSV and JSON. Fields use unique names starting with a letter and containing letters, numbers or underscores, maximum 64 characters and 30 fields. Metadata names items, warnings, evidence, review_required and human_review are reserved. Missing values are null. Evidence is checked against the source text; this is an aid to review, not a guarantee of correctness.
 
-transcribe and meeting accept one audio or video source. Normal file operations accept one source; pdf-merge accepts 2–20 PDFs. Use /v1/batches for image or media batches of up to 100 items. Saved workflows currently support document extraction.
+transcribe and meeting accept one audio or video source. Normal file operations accept one source; pdf-merge accepts 2–20 PDFs. Use /v1/batches for ordinary batches of up to 100 items. Use /v1/bulks for resumable manifests of up to 100,000 items with bounded incremental dispatch. Saved workflows currently support document extraction.
 
 
 
@@ -98,6 +98,28 @@ Failed jobs release reserved credits. Submit a new job with a new idempotency ke
 Authenticated downloads use the paths in result.files; no public result URL or API key in a query string. Use the dashboard to correct extracted scalar fields and regenerate exports without another processing charge. Review changes are recorded; line items must still be checked against the original. Results expire after 7 days. Preserve them in your system before expiration.
 
 
+
+## Large bulk workloads — API 1.5.0
+
+Use `/v1/bulks` when a workload can exceed the normal 100-item batch boundary. A bulk parent can declare up to 100,000 items, while manifest pages are appended in chunks of 1–100 items and child jobs are admitted incrementally.
+
+The client flow is:
+
+1. `POST /v1/bulks` with a persisted Idempotency-Key, operation, item count, declared input/output/scratch bytes and max_credits.
+2. Upload sources normally with `POST /v1/uploads`.
+3. Append immutable pages with `PUT /v1/bulks/{bulk_id}/manifest`.
+4. After every declared item is present, `POST /v1/bulks/{bulk_id}/seal`.
+5. Read parent state from `GET /v1/bulks/{bulk_id}` and bounded status/output pages from `/items` and `/outputs`.
+6. If the parent pauses after a storage/auth/credit/capacity check, fix the cause and call `POST /v1/bulks/{bulk_id}/resume`.
+7. For a terminal partial/failed workload, retry failed items only with `POST /v1/bulks/{bulk_id}/retry-failed` and a new persisted idempotency key.
+
+Current bulk contract: 100,000 maximum items, 100 items per manifest page, 16-item incremental child window, maximum 10 open bulk manifests per company. These are admission/scheduling limits, not parallel-processing guarantees.
+
+`GET /v1/storage` exposes authenticated company quota and current data-disk admission headroom. Large workload declarations include storage envelopes so the service can apply backpressure before processing rather than accepting work that cannot fit.
+
+Scheduler state, child admission, reservations and provider-intent checkpoints are durable across service restart. Persist IDs and idempotency keys in your own system and continue polling/resuming after transient failures instead of creating a duplicate parent.
+
+See [bulk-guide.md](bulk-guide.md) for request examples, storage behavior, cancellation and retry rules.
 
 ## Credits, estimation and payments
 
@@ -140,7 +162,7 @@ Company source storage | 2 GB; delete unused uploads to free it |
 Document | 100 pages per PDF; images count as one page | 
 Media duration | Transcribe/Meeting: 10 hours; File Toolbox media: 2 hours | 
 Queue | 100 pending jobs per company | 
-Processing | 3 platform jobs across this deployment; 1 active per company for fair sharing | 
+Processing | 4 platform jobs globally; up to 4 active for one company when capacity is available; fair scheduler rotates companies | 
 Results and source retention | 7 days; accounting metadata retained separately | Errors return JSON with a detail field. 401: missing/invalid key or login. 402: insufficient credits. 403: scope/role/suspension. 404: object absent or not in your company. 409: incompatible state, mismatched idempotency or max-credit rejection. 410: expired result. 413: upload/storage limit. 422: invalid parameters/source. 429: request/queue limit. 502/503/504: processing/provider temporarily unavailable or timeout.
 
 Delete a terminal job to remove platform result data while preserving accounting. Delete an unused upload to remove its source. In-flight sources cannot be deleted. Upstream processors and backups have their own retention; deletion is not a promise of immediate purge from all backups. Text from extraction is sent to the configured OpenAI model; Meeting and transcription use their existing configured processing providers. Review the privacy page and contact us for specific retention arrangements before uploading regulated data.
