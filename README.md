@@ -11,7 +11,7 @@ One company-scoped API for document extraction, PDF and image tools, media proce
 - [DEV.to integration article](https://dev.to/skavioeu/building-a-retry-safe-file-processing-api-estimates-idempotency-and-signed-webhooks-32p6)
 - [Webhook verification](verify_webhook.py)
 
-**API route version:** /v1. **Contract snapshot:** 1.7.0 + Pricing V2, captured 2026-10-04.
+**API route version:** /v1. **Contract snapshot:** 1.8.0 + Pricing V2, captured 2026-10-04.
 
 ## What is new in API 1.7.0
 
@@ -196,3 +196,12 @@ Grouped Flow inputs use the same `items` shape. Optional `webhook_id` must belon
 
 
 Batch starters: [Python](batch_quickstart.py) · [Node.js](batch_quickstart.mjs) · [Batch guide](batch-guide.md). Set `SKAVIO_API_KEY`, `SKAVIO_UPLOAD_IDS` (JSON array from upload), and a persisted `SKAVIO_BATCH_IDEMPOTENCY_KEY`. The examples poll and print authenticated result paths; archive results before retention expires.
+
+## Durable workflow pipelines
+
+Linear process/review/archive steps, checkpointed execution and per-step credit settlement. See [workflow guide](workflow-guide.md).
+
+## Official SDK clients
+
+Python and Node.js clients are in [sdk/README.md](sdk/README.md). Install from this repository with `python3 -m pip install ./sdk/python` or `npm install ./sdk/javascript`. They cover all 87 current OpenAPI operations, durable submission keys, resumable polling, signed webhook verification and authenticated result downloads. Packages are not yet published to PyPI/npm.
+

@@ -1,0 +1,23 @@
+{
+  "name": "@skavio/sdk",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.mjs",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.mjs"
+    }
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "MIT",
+  "files": [
+    "index.mjs",
+    "README.md",
+    "operations.mjs",
+    "index.d.ts"
+  ],
+  "types": "index.d.ts"
+}

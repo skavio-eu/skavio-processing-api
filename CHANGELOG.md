@@ -1,3 +1,7 @@
+# API 1.8.0 — 2026-10-04
+
+Durable linear workflow pipelines with process, human review and archive steps. Per-run credit caps, idempotent actions, checkpointed resume and exactly-once child-job settlement. Responsive CZ/DE/EN Dashboard controls. Production verified with actual S3 storage and conversion workers. See workflow-guide.md.
+
 # API 1.6.0 — 2026-10-04
 
 ## 1.7.0 — 2026-10-04
