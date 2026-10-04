@@ -11,9 +11,19 @@ One company-scoped API for document extraction, PDF and image tools, media proce
 - [DEV.to integration article](https://dev.to/skavioeu/building-a-retry-safe-file-processing-api-estimates-idempotency-and-signed-webhooks-32p6)
 - [Webhook verification](verify_webhook.py)
 
-**API route version:** /v1. **Contract snapshot:** 1.5.0 + Pricing V2, captured 2026-10-04.
+**API route version:** /v1. **Contract snapshot:** 1.6.0 + Pricing V2, captured 2026-10-04.
 
-## What is new in API 1.5.0
+## What is new in API 1.6.0
+
+- Private S3 sources/results and compatible legacy local files.
+- Verified direct uploads and resumable imports from approved customer cloud URLs.
+- Company-scoped retention, archive, deletion hold and opt-in separate-bucket backups.
+- Manual verified backup/restore, signed result downloads and encrypted import credentials.
+- Existing Pricing V2, jobs, batches and bulk contracts remain supported.
+
+Read the [Storage Fabric guide](storage-guide.md) for endpoints, production limits and browser upload handling.
+
+## Bulk features introduced in API 1.5.0
 
 - **Bulk manifests up to 100,000 items** with immutable manifest pages of 1–100 items and bounded incremental child admission.
 - **Storage-aware admission** through `GET /v1/storage`, declared input/output/scratch envelopes and durable storage reservations.

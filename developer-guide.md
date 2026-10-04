@@ -312,3 +312,8 @@ Grouped Flow inputs use the same `items` shape. Optional `webhook_id` must belon
 
 `GET /v1/batches` lists recent company batches. `DELETE /v1/batches/{batch_id}` deletes terminal result/source specifications while preserving accounting. Source/result retention is seven days. A repeated-failure guard may return 429; contact support rather than continuously resubmitting failing sources. Save exact payloads, keys and returned IDs in durable storage.
 
+
+
+## Storage Fabric (API 1.6.0)
+
+See [storage-guide.md](storage-guide.md) for S3 uploads, imports, retention and backup recovery. Result download paths may redirect with HTTP 307; never forward the Skavio key to the signed storage host.
