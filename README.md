@@ -120,7 +120,7 @@ Canonical live catalog: GET /v1/pricing. Always estimate before submission and u
 - A failed job releases credits; an intentional new attempt uses a new key.
 - Provider outages and service restarts preserve durable jobs/checkpoints and reservations; permanent failures release them.
 - Webhooks deliver at least once; verify HMAC on the raw bytes and deduplicate event IDs. Polling remains supported.
-- Results/source retention is 7 days. Download and archive your results before expiry.
+- Results/source retention defaults to 7 days. Storage Fabric policy, archive and hold control object retention; inspect retain_until and preserve results before expiry.
 - Extraction can be wrong. Check evidence and review flags; review line items against the source before downstream accounting.
 
 ## Limits (current deployment)

@@ -1,6 +1,6 @@
 # Skavio Processing API developer guide
 
-Contract snapshot: **1.5.0 + Pricing V2**, 2026-10-04. API route version: **/v1**.
+Contract snapshot: **1.6.0 + Pricing V2**, 2026-10-04. API route version: **/v1**.
 
 Live documentation: https://www.skavio.eu/api/docs/
 
@@ -95,7 +95,7 @@ Use a unique Idempotency-Key for each business request, 8–128 characters: lett
 
 Failed jobs release reserved credits. Submit a new job with a new idempotency key when you intentionally retry a terminal failure. Temporary provider outages and restarts preserve queued jobs, retry schedules, durable checkpoints and reservations. Permanent failures release credits; replays do not charge again.
 
-Authenticated downloads use the paths in result.files; no public result URL or API key in a query string. Use the dashboard to correct extracted scalar fields and regenerate exports without another processing charge. Review changes are recorded; line items must still be checked against the original. Results expire after 7 days. Preserve them in your system before expiration.
+Authenticated downloads use the paths in result.files; S3 results redirect to a short-lived signed URL; never put the Skavio API key in a query string or forward it to storage. Use the dashboard to correct extracted scalar fields and regenerate exports without another processing charge. Review changes are recorded; line items must still be checked against the original. Results default to 7 days; Storage Fabric retention, archive and hold may change the actual lifetime. Preserve them in your system before expiration.
 
 
 
@@ -163,7 +163,7 @@ Document | 100 pages per PDF; images count as one page |
 Media duration | Transcribe/Meeting: 10 hours; File Toolbox media: 2 hours | 
 Queue | 100 pending jobs per company | 
 Processing | 4 platform jobs globally; up to 4 active for one company when capacity is available; fair scheduler rotates companies | 
-Results and source retention | 7 days; accounting metadata retained separately | Errors return JSON with a detail field. 401: missing/invalid key or login. 402: insufficient credits. 403: scope/role/suspension. 404: object absent or not in your company. 409: incompatible state, mismatched idempotency or max-credit rejection. 410: expired result. 413: upload/storage limit. 422: invalid parameters/source. 429: request/queue limit. 502/503/504: processing/provider temporarily unavailable or timeout.
+Results and source retention | 7 days by default; configurable Storage Fabric retention/hold; accounting metadata retained separately | Errors return JSON with a detail field. 401: missing/invalid key or login. 402: insufficient credits. 403: scope/role/suspension. 404: object absent or not in your company. 409: incompatible state, mismatched idempotency or max-credit rejection. 410: expired result. 413: upload/storage limit. 422: invalid parameters/source. 429: request/queue limit. 502/503/504: processing/provider temporarily unavailable or timeout.
 
 Delete a terminal job to remove platform result data while preserving accounting. Delete an unused upload to remove its source. In-flight sources cannot be deleted. Upstream processors and backups have their own retention; deletion is not a promise of immediate purge from all backups. Text from extraction is sent to the configured OpenAI model; Meeting and transcription use their existing configured processing providers. Review the privacy page and contact us for specific retention arrangements before uploading regulated data.
 
