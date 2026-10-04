@@ -11,9 +11,20 @@ One company-scoped API for document extraction, PDF and image tools, media proce
 - [DEV.to integration article](https://dev.to/skavioeu/building-a-retry-safe-file-processing-api-estimates-idempotency-and-signed-webhooks-32p6)
 - [Webhook verification](verify_webhook.py)
 
-**API route version:** /v1. **Contract snapshot:** 1.6.0 + Pricing V2, captured 2026-10-04.
+**API route version:** /v1. **Contract snapshot:** 1.7.0 + Pricing V2, captured 2026-10-04.
 
-## What is new in API 1.6.0
+## What is new in API 1.7.0
+
+- Monthly charged/reserved usage and separate payment history, bounded CSV and key attribution.
+- Atomic company/key budgets for API, batch, bulk and paid web admission.
+- Expiring API keys with granular permissions and administrator-only policy writes.
+- Queue visibility, persisted alerts, cancellation of unstarted standalone jobs and governance audit.
+- Idempotent replay of failed job/batch/bulk webhook deliveries using the frozen original event.
+- Structured errors and X-Request-Id correlation; Czech/German/English dashboard additions.
+
+Read the [Usage, budgets and recovery guide](governance-guide.md) for authorization, UTC month rules, limits and compatibility.
+
+## Storage Fabric introduced in API 1.6.0
 
 - Private S3 sources/results and compatible legacy local files.
 - Verified direct uploads and resumable imports from approved customer cloud URLs.
@@ -130,7 +141,7 @@ These are ceilings, not guaranteed throughput or an SLA. Back off on 429 and tra
 
 ## Errors
 
-JSON errors use `detail` (a string or validation details).
+JSON errors retain `detail` and add `error_code`, `request_id` and `retryable`; X-Request-Id provides correlation. Use stable codes rather than matching error text. Validation does not echo secret inputs.
 
 | HTTP | Meaning |
 | --- | --- |

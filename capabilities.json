@@ -25,7 +25,7 @@
     "backup_configured": true,
     "local_scratch_required": true
   },
-  "version": "1.6.0",
+  "version": "1.7.0",
   "file_operations": {
     "image": [
       "image-edit",
@@ -142,7 +142,7 @@
     "enabled": true,
     "max_items": 100,
     "shorthand": "upload_ids fans out one child job per file",
-    "groups": "items supports grouped sources such as 2–20 PDFs for pdf-merge",
+    "groups": "items supports grouped sources such as 2\u201320 PDFs for pdf-merge",
     "webhook_modes": [
       "batch",
       "items",

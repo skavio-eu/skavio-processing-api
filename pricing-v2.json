@@ -1,5 +1,5 @@
 {
-  "api_version": "1.6.0",
+  "api_version": "1.7.0",
   "pricing": {
     "version": "pricing-v2",
     "nominal_credits_per_eur": 1000,

@@ -1,3 +1,7 @@
+## Current contract: API 1.7.0 + Pricing V2
+
+See [governance-guide.md](governance-guide.md) for usage, budgets, key expiry, permissions and recovery. Existing storage/bulk sections below remain supported.
+
 # Skavio Processing API developer guide
 
 Contract snapshot: **1.6.0 + Pricing V2**, 2026-10-04. API route version: **/v1**.

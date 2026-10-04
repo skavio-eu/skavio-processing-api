@@ -1,5 +1,9 @@
 # API 1.6.0 — 2026-10-04
 
+## 1.7.0 — 2026-10-04
+
+Usage/payments visibility, atomic company/key budgets, expiring granular keys, persistent alerts, queue operations and audit. Unstarted standalone-job cancellation and idempotent frozen webhook replay. Error correlation and multilingual responsive dashboard. Existing /v1, Pricing V2 and Storage Fabric contracts remain supported. See governance-guide.md for restrictions.
+
 Storage Fabric: private S3 sources/results, verified direct upload, cloud import with durable multipart checkpoints, retention/archive/hold, separate-bucket backup and checksum-verified recovery. Pricing V2 is unchanged. See [storage-guide.md](storage-guide.md).
 
 # 1.5.0 — 2026-10-04
