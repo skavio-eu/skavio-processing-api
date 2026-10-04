@@ -20,10 +20,10 @@ export class SkavioClient {
     if (timeoutMs <= 0 || !Number.isInteger(readRetries) || readRetries < 0 || readRetries > 5) throw new TypeError('Invalid timeout or retry limit');
     this.#key = apiKey; this.baseUrl = u.origin; this.timeoutMs = timeoutMs; this.readRetries = readRetries; this.fetch = fetchImpl;
   }
-  async request(method, path, {data, query, idempotencyKey, body, raw = false, signal, timeoutMs} = {}) {
+  async request(method, path, {data, query, idempotencyKey, body, raw = false, signal, timeoutMs, adminSession} = {}) {
     if (!/^\/v1\/[A-Za-z0-9_./%~-]+$/.test(path) || path.includes('..') || path.includes('//')) throw new TypeError('Expected relative /v1/ path');
     method = method.toUpperCase();
-    const headers = {Authorization: `Bearer ${this.#key}`, 'User-Agent': 'skavio-javascript/1.0.0'};
+    const headers = {Authorization: `Bearer ${this.#key}`, 'User-Agent': 'skavio-javascript/1.1.0'};
     if (idempotencyKey !== undefined) {
       if (!/^[A-Za-z0-9._:-]{8,128}$/.test(idempotencyKey)) throw new TypeError('Invalid idempotency key');
       headers['Idempotency-Key'] = idempotencyKey;
@@ -31,6 +31,10 @@ export class SkavioClient {
     if (data !== undefined) {headers['Content-Type'] = 'application/json'; body = JSON.stringify(data);}
     const url = new URL(this.baseUrl + path);
     for (const [k, v] of Object.entries(query || {})) if (v !== undefined && v !== null) url.searchParams.set(k, String(v));
+    if (adminSession !== undefined) {
+      if (!/^[A-Za-z0-9._~-]{16,4096}$/.test(adminSession)) throw new TypeError('Invalid admin session');
+      delete headers.Authorization; headers.Cookie = `skavio_web_account=${adminSession}`;
+    }
     const retries = method === 'GET' ? this.readRetries : 0;
     for (let attempt = 0; attempt <= retries; attempt++) {
       signal?.throwIfAborted();
@@ -44,7 +48,8 @@ export class SkavioClient {
       if ([429, 502, 503, 504].includes(response.status) && attempt < retries) {
         const after = response.headers.get('Retry-After');
         await response.body?.cancel();
-        await sleep(Math.min(/^\d+$/.test(after || '') ? Number(after) : 2 ** attempt, 30) * 1000); continue;
+        const parsed = /^\d+$/.test(after || '') ? Number(after) : (Date.parse(after) - Date.now()) / 1000;
+        await sleep((Number.isFinite(parsed) ? Math.max(0, parsed) : 2 ** attempt) * 1000); continue;
       }
       if (!response.ok) {
         let value = {}; try {value = await response.json();} catch {}
@@ -81,6 +86,19 @@ export class SkavioClient {
   appendManifest(bulkId, data) {return this.request('PUT', `/v1/bulks/${id(bulkId)}/manifest`, {data});}
   sealBulk(bulkId) {return this.request('POST', `/v1/bulks/${id(bulkId)}/seal`);}
   resumeBulk(bulkId) {return this.request('POST', `/v1/bulks/${id(bulkId)}/resume`);}
+  pauseBulk(bulkId, idempotencyKey) {if (!idempotencyKey) throw new TypeError('Persist an idempotency key'); return this.request('POST', `/v1/bulks/${id(bulkId)}/pause`, {idempotencyKey});}
+  cancelBulk(bulkId, idempotencyKey) {if (!idempotencyKey) throw new TypeError('Persist an idempotency key'); return this.request('POST', `/v1/bulks/${id(bulkId)}/cancel`, {idempotencyKey});}
+  notifications(query = {}) {return this.request('GET', '/v1/notifications', {query});}
+  notificationSettings() {return this.request('GET', '/v1/notifications/settings');}
+  updateNotificationSettings(data, adminSession) {if (!adminSession) throw new TypeError('Company admin web session required'); return this.request('PUT', '/v1/notifications/settings', {data, adminSession});}
+  listJobs(query = {}) {return this.request('GET', '/v1/jobs', {query});}
+  listBatches(query = {}) {return this.request('GET', '/v1/batches', {query});}
+  listBulks(query = {}) {return this.request('GET', '/v1/bulks', {query});}
+  bulkItems(bulkId, query = {}) {return this.request('GET', `/v1/bulks/${id(bulkId)}/items`, {query});}
+  bulkOutputs(bulkId, query = {}) {return this.request('GET', `/v1/bulks/${id(bulkId)}/outputs`, {query});}
+  retryBulk(bulkId, idempotencyKey) {if (!idempotencyKey) throw new TypeError('Persist an idempotency key'); return this.request('POST', `/v1/bulks/${id(bulkId)}/retry-failed`, {idempotencyKey});}
+  storage() {return this.request('GET', '/v1/storage');}
+  listObjects(query = {}) {return this.request('GET', '/v1/storage/objects', {query});}
   startWorkflow(data, idempotencyKey) {if (!idempotencyKey) throw new TypeError('Persist an idempotency key'); return this.request('POST', '/v1/workflow-runs', {data, idempotencyKey});}
   getWorkflow(runId) {return this.request('GET', `/v1/workflow-runs/${id(runId)}`);}
   controlWorkflow(runId, action, idempotencyKey, data = {}) {

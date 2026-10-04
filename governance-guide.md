@@ -36,3 +36,7 @@ Webhook receivers still verify HMAC on raw bytes and deduplicate event IDs; deli
 Errors retain `detail` and add `error_code`, `request_id`, `retryable`. Responses expose a server-generated X-Request-Id. Use error codes for decisions and retain request IDs for private support; never log keys, PDF passwords or customer documents. Validation errors do not echo secret request input. A retryable flag is not permission to blindly repeat a charged action: preserve the exact request and its original Idempotency-Key.
 
 There is no general multi-operation chaining, full SDK, provider-side accepted-job cancellation or guaranteed throughput in this release. Processing limits remain shared across plans. Czech, German and English dashboard/developer-guide additions support mobile and desktop.
+
+## API 1.9.0 controls and notifications
+
+Bulk pause and cancel require Idempotency-Key and enforce company isolation. Pause prevents new child admission; accepted jobs drain and settle once. Cancel is final and prevents further dispatch. GET /v1/notifications and GET /v1/notifications/settings are tenant-scoped. PUT /v1/notifications/settings requires a company administrator web session. Notifications are disabled by default; email requires configured transport. Frozen events are deduplicated and retried within a bounded delivery window. Email follows the current company billing address and supports cs/de/en.

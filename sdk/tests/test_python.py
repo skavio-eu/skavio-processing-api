@@ -25,8 +25,8 @@ class SDKTests(unittest.TestCase):
         self.assertEqual(s.request.call_count,1)
     @patch('skavio.client.time.sleep')
     def test_read_retry(self,_):
-        c,s=self.client([response(429,headers={'Retry-After':'0'}),response(data={'version':'1.8.0'})])
-        self.assertEqual(c.capabilities()['version'],'1.8.0'); self.assertEqual(s.request.call_count,2)
+        c,s=self.client([response(429,headers={'Retry-After':'0'}),response(data={'version':'1.9.0'})])
+        self.assertEqual(c.capabilities()['version'],'1.9.0'); self.assertEqual(s.request.call_count,2)
     def test_error_request_id(self):
         c,s=self.client([response(409,{'error_code':'budget_exceeded','detail':'Monthly credit budget exceeded.'},{'X-Request-ID':'req-123'})])
         with self.assertRaises(SkavioError) as caught: c.submit_job({},idempotency_key='company-job-123')

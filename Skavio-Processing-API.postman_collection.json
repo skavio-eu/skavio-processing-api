@@ -1,8 +1,8 @@
 {
   "info": {
-    "name": "Skavio Processing API 1.7.0 \u2014 Usage, budgets and recovery",
+    "name": "Skavio Processing API 1.9.0",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "# Skavio Processing API\n\nOne company-scoped API for document extraction, PDF and image tools, media processing, transcription and meetings.\n\n- [Product and pricing](https://www.skavio.eu/api/)\n- [Live developer documentation](https://www.skavio.eu/api/docs/)\n- [Company workspace: register and create an API key](https://www.skavio.eu/dashboard/)\n- [OpenAPI v1](openapi-v1.json) \u00b7 [Developer guide](developer-guide.md)\n- [Python quickstart](quickstart.py) \u00b7 [Node.js quickstart](quickstart.mjs) \u00b7 [Bulk guide](bulk-guide.md)\n- [Postman public documentation](https://documenter.getpostman.com/view/58677341/2sBYHNWi4n) \u00b7 [Collection](Skavio-Processing-API.postman_collection.json)\n- [DEV.to integration article](https://dev.to/skavioeu/building-a-retry-safe-file-processing-api-estimates-idempotency-and-signed-webhooks-32p6)\n- [Webhook verification](verify_webhook.py)\n\n**API route version:** /v1. **Contract snapshot:** 1.7.0 + Pricing V2, captured 2026-10-04.\n\n## What is new in API 1.7.0\n\n- Monthly charged/reserved usage and separate payment history, bounded CSV and key attribution.\n- Atomic company/key budgets for API, batch, bulk and paid web admission.\n- Expiring API keys with granular permissions and administrator-only policy writes.\n- Queue visibility, persisted alerts, cancellation of unstarted standalone jobs and governance audit.\n- Idempotent replay of failed job/batch/bulk webhook deliveries using the frozen original event.\n- Structured errors and X-Request-Id correlation; Czech/German/English dashboard additions.\n\nRead the [Usage, budgets and recovery guide](governance-guide.md) for authorization, UTC month rules, limits and compatibility.\n\n## Storage Fabric introduced in API 1.6.0\n\n- Private S3 sources/results and compatible legacy local files.\n- Verified direct uploads and resumable imports from approved customer cloud URLs.\n- Company-scoped retention, archive, deletion hold and opt-in separate-bucket backups.\n- Manual verified backup/restore, signed result downloads and encrypted import credentials.\n- Existing Pricing V2, jobs, batches and bulk contracts remain supported.\n\nRead the [Storage Fabric guide](storage-guide.md) for endpoints, production limits and browser upload handling.\n\n## Bulk features introduced in API 1.5.0\n\n- **Bulk manifests up to 100,000 items** with immutable manifest pages of 1\u2013100 items and bounded incremental child admission.\n- **Storage-aware admission** through `GET /v1/storage`, declared input/output/scratch envelopes and durable storage reservations.\n- **Resume and failed-item retry** for large workloads without resubmitting successful items.\n- **Crash/restart recovery** for scheduler state, reservations, checkpoints and provider-intent reconciliation.\n- **Fair scheduling across companies** while preserving the current ceiling of 4 active platform jobs globally.\n- Existing **100-item batches** remain available for simpler workloads.\n\nStart with [Bulk processing guide](bulk-guide.md) or the [Python bulk quickstart](bulk_quickstart.py).\nThis repository contains the public developer kit. The hosted processing service requires a Skavio account and credits.\n\n## First result\n\n1. Register, create a company profile and generate a read/write key in the company workspace. Copy it once and keep it server-side.\n2. Upload a source using multipart field `files`.\n3. Call `POST /v1/estimate` without starting processing.\n4. Set `max_credits` to the returned `estimated_credits`.\n5. Submit `POST /v1/jobs` with a stable `Idempotency-Key`.\n6. Poll the returned job ID until completed or failed; download through the authenticated result paths.\n\nThe included invoice is **synthetic**, contains no customer data, and can be used for an extraction test.\n\n### Python 3.10+\n\n```bash\npython -m venv .venv\n. .venv/bin/activate\npip install -r requirements.txt\n# Set SKAVIO_API_KEY securely in your local environment.\nexport SKAVIO_IDEMPOTENCY_KEY=\"your-persisted-invoice-request-001\"\npython quickstart.py\n```\n\n### Node.js 22+\n\n```bash\n# Set SKAVIO_API_KEY securely in your local environment.\nexport SKAVIO_IDEMPOTENCY_KEY=\"your-persisted-invoice-request-002\"\nnode quickstart.mjs\n```\n\nBoth examples use `sample-invoice.txt`; set `SKAVIO_SOURCE` to a PDF/image/text source to change it. They estimate cost before submission and write JSON output into `results/`.\nFor intentional processing of a different source or changed payload, use a **new** idempotency key.\nThe examples are server-side starters, not a full SDK or a durable workflow engine.\n\n### Postman\n\nImport the collection or fork its public workspace copy. Set **your own local/private environment** variable `api_key`; never save a real key in the public collection. Set `source_file` to a local source. Run Upload \u2192 Estimate \u2192 Submit \u2192 Job status \u2192 Download. Poll every 3\u201310 seconds until the job is terminal before downloading.\nRequests cover the API-key processing endpoints; administration, key creation, billing and webhook registration use an interactive company administrator session in the dashboard.\nBefore a new business request, clear `upload_id`, `job_id`, `download_path`, `max_credits` and `idempotency_key` in your private environment. Preserve the idempotency key when retrying the same submission.\n\n## What can I process?\n\n| Workflow | Operations |\n| --- | --- |\n| Documents | `flow-extract` \u2192 XLSX, CSV, JSON; chosen fields, evidence, review flags |\n| PDFs | merge, split, extract/delete/rotate pages, compression, watermark, page numbering, protect/unlock with your password, OCR |\n| Images | resize/crop/rotate/flip, compression, format conversion, OCR |\n| Audio/video | conversion, trimming, compression; video rotation/resolution/mute |\n| Speech | `transcribe`, `meeting` |\n\n[Capabilities snapshot](capabilities.json) lists exact operation names. Query `GET /v1/capabilities` for current prices and limits.\nNormal file jobs accept one source; PDF merge accepts 2\u201320 PDFs; Flow can process multiple document sources. Transcribe and Meeting accept one media source. Batch processing supports up to 100 items. API 1.5.0 bulk manifests support up to 100,000 items with incremental dispatch; see [bulk-guide.md](bulk-guide.md). General multi-operation chaining is not available.\n\n## Credits and price control\n\nAll web tools and API share a prepaid company wallet. No unlimited processing entitlement is advertised in this kit.\nThe server measures bytes, pages and media duration. It reserves the quoted amount on submission, charges that fixed quote on success, and releases the reservation on failure.\nUse `max_credits` to reject unexpectedly expensive submissions and `GET /v1/wallet` to track balance and reservations.\n\n| Operation | Pricing V2 |\n| --- | --- |\n| Raw OCR text (ocr-txt) | 3 credits/page |\n| OCR document output (ocr-docx / ocr-pdf) | 10 credits/page |\n| Flow extraction and export | 25 credits/page |\n| PDF/image/office/text file operation | 2 per started 25 MB or 10 pages, larger basis per source |\n| Transcribe | 8 per started minute |\n| Meeting | 15 per started minute |\n| File Toolbox audio/video | 4 per started minute |\n\nNominally 1 EUR = 1,000 credits. Top-ups: EUR10/10,000; EUR25/26,000; EUR50/53,000; EUR100/108,000; EUR250/280,000; EUR500/570,000. A retail EUR6.99/6,990 pack is also available.\n\nMonthly plans: Starter EUR29/30,000 credits; Business EUR79/85,000; Pro EUR199/225,000; Enterprise EUR499/600,000. Paid credits never expire; monthly credits roll over. Current plans share the deployment processing limits.\n\nWeb tools and API share one wallet. Submit reserves the measured quote; success charges it once; a permanent failure releases it. Temporary provider outages keep jobs queued with durable checkpoints and reserved credits. Existing quoted jobs and purchased checkout/subscription offers retain their original amounts.\n\nCanonical live catalog: GET /v1/pricing. Always estimate before submission and use max_credits rather than hard-coding a rate.\n\n## Reliability and integration rules\n\n- `queued \u2192 processing \u2192 completed | failed`; submission returns HTTP 202.\n- Replaying the identical job request with the same idempotency key returns the same job. Changing its payload returns 409.\n- Persist business request, exact payload, key and job ID in your system. If a response is lost, retry with the original key.\n- A failed job releases credits; an intentional new attempt uses a new key.\n- Provider outages and service restarts preserve durable jobs/checkpoints and reservations; permanent failures release them.\n- Webhooks deliver at least once; verify HMAC on the raw bytes and deduplicate event IDs. Polling remains supported.\n- Results/source retention defaults to 7 days. Storage Fabric policy, archive and hold control object retention; inspect retain_until and preserve results before expiry.\n- Extraction can be wrong. Check evidence and review flags; review line items against the source before downstream accounting.\n\n## Limits (current deployment)\n\n120 requests/minute per key/session; up to 100 files/500 MB per upload; 2 GB source storage/company; 100 pages/PDF; 100 queued jobs/company; 4 active platform jobs/company and 4 globally. Transcribe/Meeting input can be up to 10 hours; File Toolbox media up to 2 hours.\nThese are ceilings, not guaranteed throughput or an SLA. Back off on 429 and transient 5xx responses. Current plans share the processing limits.\n\n## Errors\n\nJSON errors retain `detail` and add `error_code`, `request_id` and `retryable`; X-Request-Id provides correlation. Use stable codes rather than matching error text. Validation does not echo secret inputs.\n\n| HTTP | Meaning |\n| --- | --- |\n| 401 / 403 | Missing/invalid authentication, scope or permission |\n| 402 | Insufficient credits |\n| 404 | Missing object or another company\u2019s object |\n| 409 | State/idempotency conflict or max-credit rejection |\n| 410 | Expired result |\n| 413 / 422 | Upload/storage limit or invalid source/parameters |\n| 429 | Request/queue limit |\n| 502 / 503 / 504 | Processing/provider unavailable or timeout |\n\n## Security and support\n\nUse `Authorization: Bearer <your-key>` over HTTPS. Never expose keys in frontend apps, URLs, screenshots, commits or shared Postman environments. Company-scoped object IDs cannot access another company.\nCreate/revoke keys and register webhooks in the dashboard. PDF passwords are secrets; do not log payloads.\nReview [Privacy](https://www.skavio.eu/privacy/) and [Terms](https://www.skavio.eu/terms/) before regulated/sensitive inputs. Source processing can involve external providers; backup/provider retention is separate from platform deletion.\n\nReport integration issues through this repository with **synthetic reproductions only**, or contact **work@skavio.eu** privately. Never attach customer documents, keys or billing data to a public issue.\n\n## Versioning\n\nCompatible additions remain under /v1; clients should ignore unknown response fields. Breaking changes require a major API version or an announced migration. [Changelog](CHANGELOG.md).\n\n## License\n\nExample code and documentation in this developer kit are MIT licensed. This does not license the hosted backend or grant free use of the hosted service; service use follows its Terms and credit pricing.\n\n\n## Batch processing \u2014 API 1.5.0\n\nSubmit up to 100 items for any advertised operation through the same processing pipeline. A batch uses one operation/options set and creates ordinary child jobs. Processing remains 4 active jobs per company and 4 globally; a batch does not promise 100 parallel executions.\n\n1. Upload files with `POST /v1/uploads`; retain their upload IDs.\n2. Quote `POST /v1/batches/estimate` using `{\"operation\":\"jpg\",\"upload_ids\":[\"UPLOAD_A\",\"UPLOAD_B\"]}`.\n3. Submit the same payload to `POST /v1/batches` with `max_credits` set to the total quote and a persisted `Idempotency-Key` (8\u2013128 allowed characters).\n4. Poll `GET /v1/batches/{batch_id}`. Each `items[].job` includes status, credits and result download paths. `progress` ranges from 0 to 1; terminal states are `completed`, `partial`, `failed`.\n5. Download `GET /v1/batches/{batch_id}/results.zip` after completion. The archive includes successful results and `manifest.json`. Missing/expired files return 410. ZIP output is limited to 1 GB; use individual authenticated downloads for larger results.\n6. Use `POST /v1/batches/{batch_id}/retry-failed` with a new persisted key to create a separately billed batch of failed items. Retry requests are bound to the original batch. Download successes before retention expires.\n\nCredits reserve atomically for the complete batch. Every child has separate accounting; successful items are charged and failed items release their reservation. Replaying the same submission does not reserve credits again. Changing a request while reusing its key returns 409. Batch items count toward the 100 queued jobs per company.\n\nUse either `upload_ids` (one child per source) or `items` (explicit groups), never both. PDF merge requires groups with 2\u201320 PDFs each:\n\n```json\n{\"operation\":\"pdf-merge\",\"items\":[{\"upload_ids\":[\"PDF_A\",\"PDF_B\"]},{\"upload_ids\":[\"PDF_C\",\"PDF_D\"]}],\"webhook_mode\":\"both\"}\n```\n\nGrouped Flow inputs use the same `items` shape. Optional `webhook_id` must belong to your company. `webhook_mode` accepts `batch` (parent events), `items` (child events), or `both`. Parent events are `batch.completed`, `batch.partial`, `batch.failed`; verify the same signature and deduplicate event IDs. Parent delivery IDs are distinct from child delivery IDs.\n\n`GET /v1/batches` lists recent company batches. `DELETE /v1/batches/{batch_id}` deletes terminal result/source specifications while preserving accounting. Source/result retention is seven days. A repeated-failure guard may return 429; contact support rather than continuously resubmitting failing sources. Save exact payloads, keys and returned IDs in durable storage.\n\n\nBatch starters: [Python](batch_quickstart.py) \u00b7 [Node.js](batch_quickstart.mjs) \u00b7 [Batch guide](batch-guide.md). Set `SKAVIO_API_KEY`, `SKAVIO_UPLOAD_IDS` (JSON array from upload), and a persisted `SKAVIO_BATCH_IDEMPOTENCY_KEY`. The examples poll and print authenticated result paths; archive results before retention expires.\n"
+    "description": "# Skavio Processing API\n\nOne company-scoped API for document extraction, PDF and image tools, media processing, transcription and meetings.\n\n- [Product and pricing](https://www.skavio.eu/api/)\n- [Live developer documentation](https://www.skavio.eu/api/docs/)\n- [Company workspace: register and create an API key](https://www.skavio.eu/dashboard/)\n- [OpenAPI v1](openapi-v1.json) \u00b7 [Developer guide](developer-guide.md)\n- [Python quickstart](quickstart.py) \u00b7 [Node.js quickstart](quickstart.mjs) \u00b7 [Bulk guide](bulk-guide.md)\n- [Postman public documentation](https://documenter.getpostman.com/view/58677341/2sBYHNWi4n) \u00b7 [Collection](Skavio-Processing-API.postman_collection.json)\n- [DEV.to integration article](https://dev.to/skavioeu/building-a-retry-safe-file-processing-api-estimates-idempotency-and-signed-webhooks-32p6)\n- [Webhook verification](verify_webhook.py)\n\n**API route version:** /v1. **Contract snapshot:** 1.9.0 + Pricing V2, captured 2026-10-04.\n\n## What is new in API 1.7.0\n\n- Monthly charged/reserved usage and separate payment history, bounded CSV and key attribution.\n- Atomic company/key budgets for API, batch, bulk and paid web admission.\n- Expiring API keys with granular permissions and administrator-only policy writes.\n- Queue visibility, persisted alerts, cancellation of unstarted standalone jobs and governance audit.\n- Idempotent replay of failed job/batch/bulk webhook deliveries using the frozen original event.\n- Structured errors and X-Request-Id correlation; Czech/German/English dashboard additions.\n\nRead the [Usage, budgets and recovery guide](governance-guide.md) for authorization, UTC month rules, limits and compatibility.\n\n## Storage Fabric introduced in API 1.6.0\n\n- Private S3 sources/results and compatible legacy local files.\n- Verified direct uploads and resumable imports from approved customer cloud URLs.\n- Company-scoped retention, archive, deletion hold and opt-in separate-bucket backups.\n- Manual verified backup/restore, signed result downloads and encrypted import credentials.\n- Existing Pricing V2, jobs, batches and bulk contracts remain supported.\n\nRead the [Storage Fabric guide](storage-guide.md) for endpoints, production limits and browser upload handling.\n\n## Bulk features introduced in API 1.5.0\n\n- **Bulk manifests up to 100,000 items** with immutable manifest pages of 1\u2013100 items and bounded incremental child admission.\n- **Storage-aware admission** through `GET /v1/storage`, declared input/output/scratch envelopes and durable storage reservations.\n- **Resume and failed-item retry** for large workloads without resubmitting successful items.\n- **Crash/restart recovery** for scheduler state, reservations, checkpoints and provider-intent reconciliation.\n- **Fair scheduling across companies** while preserving the current ceiling of 4 active platform jobs globally.\n- Existing **100-item batches** remain available for simpler workloads.\n\nStart with [Bulk processing guide](bulk-guide.md) or the [Python bulk quickstart](bulk_quickstart.py).\nThis repository contains the public developer kit. The hosted processing service requires a Skavio account and credits.\n\n## First result\n\n1. Register, create a company profile and generate a read/write key in the company workspace. Copy it once and keep it server-side.\n2. Upload a source using multipart field `files`.\n3. Call `POST /v1/estimate` without starting processing.\n4. Set `max_credits` to the returned `estimated_credits`.\n5. Submit `POST /v1/jobs` with a stable `Idempotency-Key`.\n6. Poll the returned job ID until completed or failed; download through the authenticated result paths.\n\nThe included invoice is **synthetic**, contains no customer data, and can be used for an extraction test.\n\n### Python 3.10+\n\n```bash\npython -m venv .venv\n. .venv/bin/activate\npip install -r requirements.txt\n# Set SKAVIO_API_KEY securely in your local environment.\nexport SKAVIO_IDEMPOTENCY_KEY=\"your-persisted-invoice-request-001\"\npython quickstart.py\n```\n\n### Node.js 22+\n\n```bash\n# Set SKAVIO_API_KEY securely in your local environment.\nexport SKAVIO_IDEMPOTENCY_KEY=\"your-persisted-invoice-request-002\"\nnode quickstart.mjs\n```\n\nBoth examples use `sample-invoice.txt`; set `SKAVIO_SOURCE` to a PDF/image/text source to change it. They estimate cost before submission and write JSON output into `results/`.\nFor intentional processing of a different source or changed payload, use a **new** idempotency key.\nThe examples are server-side starters, not a full SDK or a durable workflow engine.\n\n### Postman\n\nImport the collection or fork its public workspace copy. Set **your own local/private environment** variable `api_key`; never save a real key in the public collection. Set `source_file` to a local source. Run Upload \u2192 Estimate \u2192 Submit \u2192 Job status \u2192 Download. Poll every 3\u201310 seconds until the job is terminal before downloading.\nRequests cover the API-key processing endpoints; administration, key creation, billing and webhook registration use an interactive company administrator session in the dashboard.\nBefore a new business request, clear `upload_id`, `job_id`, `download_path`, `max_credits` and `idempotency_key` in your private environment. Preserve the idempotency key when retrying the same submission.\n\n## What can I process?\n\n| Workflow | Operations |\n| --- | --- |\n| Documents | `flow-extract` \u2192 XLSX, CSV, JSON; chosen fields, evidence, review flags |\n| PDFs | merge, split, extract/delete/rotate pages, compression, watermark, page numbering, protect/unlock with your password, OCR |\n| Images | resize/crop/rotate/flip, compression, format conversion, OCR |\n| Audio/video | conversion, trimming, compression; video rotation/resolution/mute |\n| Speech | `transcribe`, `meeting` |\n\n[Capabilities snapshot](capabilities.json) lists exact operation names. Query `GET /v1/capabilities` for current prices and limits.\nNormal file jobs accept one source; PDF merge accepts 2\u201320 PDFs; Flow can process multiple document sources. Transcribe and Meeting accept one media source. Batch processing supports up to 100 items. API 1.5.0 bulk manifests support up to 100,000 items with incremental dispatch; see [bulk-guide.md](bulk-guide.md). General multi-operation chaining is not available.\n\n## Credits and price control\n\nAll web tools and API share a prepaid company wallet. No unlimited processing entitlement is advertised in this kit.\nThe server measures bytes, pages and media duration. It reserves the quoted amount on submission, charges that fixed quote on success, and releases the reservation on failure.\nUse `max_credits` to reject unexpectedly expensive submissions and `GET /v1/wallet` to track balance and reservations.\n\n| Operation | Pricing V2 |\n| --- | --- |\n| Raw OCR text (ocr-txt) | 3 credits/page |\n| OCR document output (ocr-docx / ocr-pdf) | 10 credits/page |\n| Flow extraction and export | 25 credits/page |\n| PDF/image/office/text file operation | 2 per started 25 MB or 10 pages, larger basis per source |\n| Transcribe | 8 per started minute |\n| Meeting | 15 per started minute |\n| File Toolbox audio/video | 4 per started minute |\n\nNominally 1 EUR = 1,000 credits. Top-ups: EUR10/10,000; EUR25/26,000; EUR50/53,000; EUR100/108,000; EUR250/280,000; EUR500/570,000. A retail EUR6.99/6,990 pack is also available.\n\nMonthly plans: Starter EUR29/30,000 credits; Business EUR79/85,000; Pro EUR199/225,000; Enterprise EUR499/600,000. Paid credits never expire; monthly credits roll over. Current plans share the deployment processing limits.\n\nWeb tools and API share one wallet. Submit reserves the measured quote; success charges it once; a permanent failure releases it. Temporary provider outages keep jobs queued with durable checkpoints and reserved credits. Existing quoted jobs and purchased checkout/subscription offers retain their original amounts.\n\nCanonical live catalog: GET /v1/pricing. Always estimate before submission and use max_credits rather than hard-coding a rate.\n\n## Reliability and integration rules\n\n- `queued \u2192 processing \u2192 completed | failed`; submission returns HTTP 202.\n- Replaying the identical job request with the same idempotency key returns the same job. Changing its payload returns 409.\n- Persist business request, exact payload, key and job ID in your system. If a response is lost, retry with the original key.\n- A failed job releases credits; an intentional new attempt uses a new key.\n- Provider outages and service restarts preserve durable jobs/checkpoints and reservations; permanent failures release them.\n- Webhooks deliver at least once; verify HMAC on the raw bytes and deduplicate event IDs. Polling remains supported.\n- Results/source retention defaults to 7 days. Storage Fabric policy, archive and hold control object retention; inspect retain_until and preserve results before expiry.\n- Extraction can be wrong. Check evidence and review flags; review line items against the source before downstream accounting.\n\n## Limits (current deployment)\n\n120 requests/minute per key/session; up to 100 files/500 MB per upload; 2 GB source storage/company; 100 pages/PDF; 100 queued jobs/company; 4 active platform jobs/company and 4 globally. Transcribe/Meeting input can be up to 10 hours; File Toolbox media up to 2 hours.\nThese are ceilings, not guaranteed throughput or an SLA. Back off on 429 and transient 5xx responses. Current plans share the processing limits.\n\n## Errors\n\nJSON errors retain `detail` and add `error_code`, `request_id` and `retryable`; X-Request-Id provides correlation. Use stable codes rather than matching error text. Validation does not echo secret inputs.\n\n| HTTP | Meaning |\n| --- | --- |\n| 401 / 403 | Missing/invalid authentication, scope or permission |\n| 402 | Insufficient credits |\n| 404 | Missing object or another company\u2019s object |\n| 409 | State/idempotency conflict or max-credit rejection |\n| 410 | Expired result |\n| 413 / 422 | Upload/storage limit or invalid source/parameters |\n| 429 | Request/queue limit |\n| 502 / 503 / 504 | Processing/provider unavailable or timeout |\n\n## Security and support\n\nUse `Authorization: Bearer <your-key>` over HTTPS. Never expose keys in frontend apps, URLs, screenshots, commits or shared Postman environments. Company-scoped object IDs cannot access another company.\nCreate/revoke keys and register webhooks in the dashboard. PDF passwords are secrets; do not log payloads.\nReview [Privacy](https://www.skavio.eu/privacy/) and [Terms](https://www.skavio.eu/terms/) before regulated/sensitive inputs. Source processing can involve external providers; backup/provider retention is separate from platform deletion.\n\nReport integration issues through this repository with **synthetic reproductions only**, or contact **work@skavio.eu** privately. Never attach customer documents, keys or billing data to a public issue.\n\n## Versioning\n\nCompatible additions remain under /v1; clients should ignore unknown response fields. Breaking changes require a major API version or an announced migration. [Changelog](CHANGELOG.md).\n\n## License\n\nExample code and documentation in this developer kit are MIT licensed. This does not license the hosted backend or grant free use of the hosted service; service use follows its Terms and credit pricing.\n\n\n## Batch processing \u2014 API 1.5.0\n\nSubmit up to 100 items for any advertised operation through the same processing pipeline. A batch uses one operation/options set and creates ordinary child jobs. Processing remains 4 active jobs per company and 4 globally; a batch does not promise 100 parallel executions.\n\n1. Upload files with `POST /v1/uploads`; retain their upload IDs.\n2. Quote `POST /v1/batches/estimate` using `{\"operation\":\"jpg\",\"upload_ids\":[\"UPLOAD_A\",\"UPLOAD_B\"]}`.\n3. Submit the same payload to `POST /v1/batches` with `max_credits` set to the total quote and a persisted `Idempotency-Key` (8\u2013128 allowed characters).\n4. Poll `GET /v1/batches/{batch_id}`. Each `items[].job` includes status, credits and result download paths. `progress` ranges from 0 to 1; terminal states are `completed`, `partial`, `failed`.\n5. Download `GET /v1/batches/{batch_id}/results.zip` after completion. The archive includes successful results and `manifest.json`. Missing/expired files return 410. ZIP output is limited to 1 GB; use individual authenticated downloads for larger results.\n6. Use `POST /v1/batches/{batch_id}/retry-failed` with a new persisted key to create a separately billed batch of failed items. Retry requests are bound to the original batch. Download successes before retention expires.\n\nCredits reserve atomically for the complete batch. Every child has separate accounting; successful items are charged and failed items release their reservation. Replaying the same submission does not reserve credits again. Changing a request while reusing its key returns 409. Batch items count toward the 100 queued jobs per company.\n\nUse either `upload_ids` (one child per source) or `items` (explicit groups), never both. PDF merge requires groups with 2\u201320 PDFs each:\n\n```json\n{\"operation\":\"pdf-merge\",\"items\":[{\"upload_ids\":[\"PDF_A\",\"PDF_B\"]},{\"upload_ids\":[\"PDF_C\",\"PDF_D\"]}],\"webhook_mode\":\"both\"}\n```\n\nGrouped Flow inputs use the same `items` shape. Optional `webhook_id` must belong to your company. `webhook_mode` accepts `batch` (parent events), `items` (child events), or `both`. Parent events are `batch.completed`, `batch.partial`, `batch.failed`; verify the same signature and deduplicate event IDs. Parent delivery IDs are distinct from child delivery IDs.\n\n`GET /v1/batches` lists recent company batches. `DELETE /v1/batches/{batch_id}` deletes terminal result/source specifications while preserving accounting. Source/result retention is seven days. A repeated-failure guard may return 429; contact support rather than continuously resubmitting failing sources. Save exact payloads, keys and returned IDs in durable storage.\n\n\nBatch starters: [Python](batch_quickstart.py) \u00b7 [Node.js](batch_quickstart.mjs) \u00b7 [Batch guide](batch-guide.md). Set `SKAVIO_API_KEY`, `SKAVIO_UPLOAD_IDS` (JSON array from upload), and a persisted `SKAVIO_BATCH_IDEMPOTENCY_KEY`. The examples poll and print authenticated result paths; archive results before retention expires.\n\n## Durable workflow pipelines\n\nLinear process/review/archive steps, checkpointed execution and per-step credit settlement. See [workflow guide](workflow-guide.md).\n\n## Official SDK clients\n\nPython and Node.js clients are in [sdk/README.md](sdk/README.md). Install from this repository with `python3 -m pip install ./sdk/python` or `npm install ./sdk/javascript`. They cover all 92 current OpenAPI operations, durable submission keys, resumable polling, signed webhook verification and authenticated result downloads. Packages are not yet published to PyPI/npm.\n\n\n## API 1.9.0 controls and notifications\n\nBulk pause and cancel require Idempotency-Key and enforce company isolation. Pause prevents new child admission; accepted jobs drain and settle once. Cancel is final and prevents further dispatch. GET /v1/notifications and GET /v1/notifications/settings are tenant-scoped. PUT /v1/notifications/settings requires a company administrator web session. Notifications are disabled by default; email requires configured transport. Frozen events are deduplicated and retried within a bounded delivery window. Email follows the current company billing address and supports cs/de/en.\n"
   },
   "auth": {
     "type": "bearer",
@@ -129,1315 +129,1689 @@
     {
       "key": "replay_idempotency_key",
       "value": ""
+    },
+    {
+      "key": "api_key",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "admin_session",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "idempotency_key",
+      "value": "persisted-action-key-190",
+      "type": "string"
     }
   ],
   "item": [
     {
-      "name": "00 \u00b7 Pricing V2 (public)",
+      "name": "estimate_batch_v1_batches_estimate_post",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/v1/batches/estimate",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "Estimate a complete file batch without reserving credits\noperationId: estimate_batch_v1_batches_estimate_post\nAuthentication: company bearer key or web session",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"operation\": \"txt\",\n  \"upload_ids\": [\n    \"{{upload_id}}\"\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "submit_batch_v1_batches_post",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/v1/batches",
+        "header": [
+          {
+            "key": "Idempotency-Key",
+            "value": "{{idempotency_key}}",
+            "description": "Persist a separate stable key for this action; replay the exact same payload."
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "Atomically reserve and enqueue a file batch\noperationId: submit_batch_v1_batches_post\nAuthentication: company bearer key or web session",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"operation\": \"txt\",\n  \"upload_ids\": [\n    \"{{upload_id}}\"\n  ],\n  \"max_credits\": 10\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "batches_v1_batches_get",
       "request": {
         "method": "GET",
+        "url": "{{base_url}}/v1/batches",
+        "header": [],
+        "description": "List recent company batches\noperationId: batches_v1_batches_get\nAuthentication: company bearer key or web session"
+      },
+      "response": []
+    },
+    {
+      "name": "batch_v1_batches__batch_id__get",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/v1/batches/{{batch_id}}",
+        "header": [],
+        "description": "Read batch progress and per-file job results\noperationId: batch_v1_batches__batch_id__get\nAuthentication: company bearer key or web session"
+      },
+      "response": []
+    },
+    {
+      "name": "delete_batch_v1_batches__batch_id__delete",
+      "request": {
+        "method": "DELETE",
+        "url": "{{base_url}}/v1/batches/{{batch_id}}",
+        "header": [],
+        "description": "Delete terminal batch result data while retaining accounting\noperationId: delete_batch_v1_batches__batch_id__delete\nAuthentication: company bearer key or web session"
+      },
+      "response": []
+    },
+    {
+      "name": "batch_zip_v1_batches__batch_id__results_zip_get",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/v1/batches/{{batch_id}}/results.zip",
+        "header": [],
+        "description": "Download successful batch results as one ZIP\noperationId: batch_zip_v1_batches__batch_id__results_zip_get\nAuthentication: company bearer key or web session"
+      },
+      "response": []
+    },
+    {
+      "name": "retry_failed_v1_batches__batch_id__retry_failed_post",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/v1/batches/{{batch_id}}/retry-failed",
+        "header": [
+          {
+            "key": "Idempotency-Key",
+            "value": "{{idempotency_key}}",
+            "description": "Persist a separate stable key for this action; replay the exact same payload."
+          }
+        ],
+        "description": "Create a new batch from failed items only\noperationId: retry_failed_v1_batches__batch_id__retry_failed_post\nAuthentication: company bearer key or web session"
+      },
+      "response": []
+    },
+    {
+      "name": "create_v1_bulks_post",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/v1/bulks",
+        "header": [
+          {
+            "key": "Idempotency-Key",
+            "value": "{{idempotency_key}}",
+            "description": "Persist a separate stable key for this action; replay the exact same payload."
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "Declare a bulk workload and reserve disk headroom, without allocating jobs or credits\noperationId: create_v1_bulks_post\nAuthentication: company bearer key or web session",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"operation\": \"txt\",\n  \"total_items\": 1,\n  \"declared_input_bytes\": 4096,\n  \"declared_output_bytes\": 4096,\n  \"declared_scratch_bytes\": 4096,\n  \"max_credits\": 10\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "listing_v1_bulks_get",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/v1/bulks",
+        "header": [],
+        "description": "List company bulk manifests\noperationId: listing_v1_bulks_get\nAuthentication: company bearer key or web session"
+      },
+      "response": []
+    },
+    {
+      "name": "append_v1_bulks__bulk_id__manifest_put",
+      "request": {
+        "method": "PUT",
+        "url": "{{base_url}}/v1/bulks/{{bulk_id}}/manifest",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "Append an immutable manifest page (1\u2013100 items); same offset and payload replay safely\noperationId: append_v1_bulks__bulk_id__manifest_put\nAuthentication: company bearer key or web session",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"offset\": 0,\n  \"items\": [\n    {\n      \"upload_ids\": [\n        \"{{upload_id}}\"\n      ],\n      \"output_bytes\": 4096,\n      \"scratch_bytes\": 4096\n    }\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "seal_v1_bulks__bulk_id__seal_post",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/v1/bulks/{{bulk_id}}/seal",
+        "header": [],
+        "description": "Preflight the full measured manifest and enable bounded dispatch\noperationId: seal_v1_bulks__bulk_id__seal_post\nAuthentication: company bearer key or web session"
+      },
+      "response": []
+    },
+    {
+      "name": "status_v1_bulks__bulk_id__get",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/v1/bulks/{{bulk_id}}",
+        "header": [],
+        "description": "Read resumable company bulk status\noperationId: status_v1_bulks__bulk_id__get\nAuthentication: company bearer key or web session"
+      },
+      "response": []
+    },
+    {
+      "name": "cancel_v1_bulks__bulk_id__delete",
+      "request": {
+        "method": "DELETE",
+        "url": "{{base_url}}/v1/bulks/{{bulk_id}}",
+        "header": [],
+        "description": "Cancel future dispatch; admitted child jobs keep their existing billing and retention\noperationId: cancel_v1_bulks__bulk_id__delete\nAuthentication: company bearer key or web session"
+      },
+      "response": []
+    },
+    {
+      "name": "items_v1_bulks__bulk_id__items_get",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/v1/bulks/{{bulk_id}}/items",
+        "header": [],
+        "description": "Authenticated bounded manifest/status page\noperationId: items_v1_bulks__bulk_id__items_get\nAuthentication: company bearer key or web session"
+      },
+      "response": []
+    },
+    {
+      "name": "outputs_v1_bulks__bulk_id__outputs_get",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/v1/bulks/{{bulk_id}}/outputs",
+        "header": [],
+        "description": "Authenticated bounded output page; downloads reuse company job authorization\noperationId: outputs_v1_bulks__bulk_id__outputs_get\nAuthentication: company bearer key or web session"
+      },
+      "response": []
+    },
+    {
+      "name": "pause_control_v1_bulks__bulk_id__pause_post",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/v1/bulks/{{bulk_id}}/pause",
+        "header": [
+          {
+            "key": "Idempotency-Key",
+            "value": "{{idempotency_key}}",
+            "description": "Persist a separate stable key for this action; replay the exact same payload."
+          }
+        ],
+        "description": "Stop future bulk admission; already accepted child work finishes\noperationId: pause_control_v1_bulks__bulk_id__pause_post\nAuthentication: company bearer key or web session"
+      },
+      "response": []
+    },
+    {
+      "name": "cancel_control_v1_bulks__bulk_id__cancel_post",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/v1/bulks/{{bulk_id}}/cancel",
+        "header": [
+          {
+            "key": "Idempotency-Key",
+            "value": "{{idempotency_key}}",
+            "description": "Persist a separate stable key for this action; replay the exact same payload."
+          }
+        ],
+        "description": "Stop future bulk admission and drain accepted children without discarding accounting\noperationId: cancel_control_v1_bulks__bulk_id__cancel_post\nAuthentication: company bearer key or web session"
+      },
+      "response": []
+    },
+    {
+      "name": "resume_v1_bulks__bulk_id__resume_post",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/v1/bulks/{{bulk_id}}/resume",
+        "header": [],
+        "description": "Recheck storage and auth to resume a paused manifest\noperationId: resume_v1_bulks__bulk_id__resume_post\nAuthentication: company bearer key or web session"
+      },
+      "response": []
+    },
+    {
+      "name": "retry_v1_bulks__bulk_id__retry_failed_post",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/v1/bulks/{{bulk_id}}/retry-failed",
+        "header": [
+          {
+            "key": "Idempotency-Key",
+            "value": "{{idempotency_key}}",
+            "description": "Persist a separate stable key for this action; replay the exact same payload."
+          }
+        ],
+        "description": "Reset only failed items; replay is idempotent and successful items are never charged again\noperationId: retry_v1_bulks__bulk_id__retry_failed_post\nAuthentication: company bearer key or web session"
+      },
+      "response": []
+    },
+    {
+      "name": "list_pipelines_v1_pipelines_get",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/v1/pipelines",
+        "header": [],
+        "description": "List immutable saved workflow pipelines\noperationId: list_pipelines_v1_pipelines_get\nAuthentication: company bearer key or web session"
+      },
+      "response": []
+    },
+    {
+      "name": "create_pipeline_v1_pipelines_post",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/v1/pipelines",
+        "header": [
+          {
+            "key": "Idempotency-Key",
+            "value": "{{idempotency_key}}",
+            "description": "Persist a separate stable key for this action; replay the exact same payload."
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Cookie",
+            "value": "skavio_web_account={{admin_session}}",
+            "description": "Private company administrator session; never export/share."
+          }
+        ],
+        "description": "Save an immutable company pipeline; administrator web session\noperationId: create_pipeline_v1_pipelines_post\nAuthentication: company administrator web session",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Synthetic text and review\",\n  \"steps\": [\n    {\n      \"id\": \"convert\",\n      \"operation\": \"txt\"\n    },\n    {\n      \"id\": \"review\",\n      \"kind\": \"review\"\n    }\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "delete_pipeline_v1_pipelines__pipeline_id__delete",
+      "request": {
+        "method": "DELETE",
+        "url": "{{base_url}}/v1/pipelines/{{pipeline_id}}",
+        "header": [
+          {
+            "key": "Idempotency-Key",
+            "value": "{{idempotency_key}}",
+            "description": "Persist a separate stable key for this action; replay the exact same payload."
+          },
+          {
+            "key": "Cookie",
+            "value": "skavio_web_account={{admin_session}}",
+            "description": "Private company administrator session; never export/share."
+          }
+        ],
+        "description": "Disable a pipeline; accepted runs keep their immutable definition\noperationId: delete_pipeline_v1_pipelines__pipeline_id__delete\nAuthentication: company administrator web session",
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "create_run_v1_workflow_runs_post",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/v1/workflow-runs",
+        "header": [
+          {
+            "key": "Idempotency-Key",
+            "value": "{{idempotency_key}}",
+            "description": "Persist a separate stable key for this action; replay the exact same payload."
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "Start a durable pipeline with a hard per-run credit cap\noperationId: create_run_v1_workflow_runs_post\nAuthentication: company bearer key or web session",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"pipeline_id\": \"{{pipeline_id}}\",\n  \"upload_ids\": [\n    \"{{upload_id}}\"\n  ],\n  \"max_credits\": 10\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "list_runs_v1_workflow_runs_get",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/v1/workflow-runs",
+        "header": [],
+        "description": "List company workflow runs\noperationId: list_runs_v1_workflow_runs_get\nAuthentication: company bearer key or web session"
+      },
+      "response": []
+    },
+    {
+      "name": "get_run_v1_workflow_runs__run_id__get",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/v1/workflow-runs/{{run_id}}",
+        "header": [],
+        "description": "Read workflow checkpoint, child jobs and credit consumption\noperationId: get_run_v1_workflow_runs__run_id__get\nAuthentication: company bearer key or web session"
+      },
+      "response": []
+    },
+    {
+      "name": "pause_v1_workflow_runs__run_id__pause_post",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/v1/workflow-runs/{{run_id}}/pause",
+        "header": [
+          {
+            "key": "Idempotency-Key",
+            "value": "{{idempotency_key}}",
+            "description": "Persist a separate stable key for this action; replay the exact same payload."
+          }
+        ],
+        "description": "Pause future steps; accepted work may finish\noperationId: pause_v1_workflow_runs__run_id__pause_post\nAuthentication: company bearer key or web session"
+      },
+      "response": []
+    },
+    {
+      "name": "cancel_v1_workflow_runs__run_id__cancel_post",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/v1/workflow-runs/{{run_id}}/cancel",
+        "header": [
+          {
+            "key": "Idempotency-Key",
+            "value": "{{idempotency_key}}",
+            "description": "Persist a separate stable key for this action; replay the exact same payload."
+          }
+        ],
+        "description": "Stop future steps; accepted work keeps its existing billing\noperationId: cancel_v1_workflow_runs__run_id__cancel_post\nAuthentication: company bearer key or web session"
+      },
+      "response": []
+    },
+    {
+      "name": "resume_v1_workflow_runs__run_id__resume_post",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/v1/workflow-runs/{{run_id}}/resume",
+        "header": [
+          {
+            "key": "Idempotency-Key",
+            "value": "{{idempotency_key}}",
+            "description": "Persist a separate stable key for this action; replay the exact same payload."
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "Resume paused workflow; cap/key changes require administrator session\noperationId: resume_v1_workflow_runs__run_id__resume_post\nAuthentication: company bearer key or web session",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "approve_v1_workflow_runs__run_id__approve_post",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/v1/workflow-runs/{{run_id}}/approve",
+        "header": [
+          {
+            "key": "Idempotency-Key",
+            "value": "{{idempotency_key}}",
+            "description": "Persist a separate stable key for this action; replay the exact same payload."
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Cookie",
+            "value": "skavio_web_account={{admin_session}}",
+            "description": "Private company administrator session; never export/share."
+          }
+        ],
+        "description": "Approve a human review gate; administrator web session\noperationId: approve_v1_workflow_runs__run_id__approve_post\nAuthentication: company administrator web session",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"approved\": true,\n  \"note\": \"Reviewed by company administrator\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "settings_v1_notifications_settings_get",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/v1/notifications/settings",
+        "header": [],
+        "description": "Read opt-in notification configuration\noperationId: settings_v1_notifications_settings_get\nAuthentication: company bearer key or web session"
+      },
+      "response": []
+    },
+    {
+      "name": "update_v1_notifications_settings_put",
+      "request": {
+        "method": "PUT",
+        "url": "{{base_url}}/v1/notifications/settings",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Cookie",
+            "value": "skavio_web_account={{admin_session}}",
+            "description": "Private company administrator session; never export/share."
+          }
+        ],
+        "description": "Administrator opt-in for low-credit and processing state notifications\noperationId: update_v1_notifications_settings_put\nAuthentication: company administrator web session",
         "auth": {
           "type": "noauth"
         },
-        "url": {
-          "raw": "{{base_url}}/v1/pricing",
-          "host": [
-            "{{base_url}}"
-          ],
-          "path": [
-            "v1",
-            "pricing"
-          ]
-        },
-        "description": "Canonical operation rates, top-ups and monthly plans. Pricing version is independent from API version."
-      }
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"enabled\": false,\n  \"webhook_id\": null,\n  \"email\": false,\n  \"language\": \"en\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
     },
     {
-      "name": "01 \u00b7 Capabilities (public)",
+      "name": "listing_v1_notifications_get",
       "request": {
         "method": "GET",
+        "url": "{{base_url}}/v1/notifications",
         "header": [],
+        "description": "Bounded company notification delivery history\noperationId: listing_v1_notifications_get\nAuthentication: company bearer key or web session"
+      },
+      "response": []
+    },
+    {
+      "name": "public_pricing_v1_pricing_get",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/v1/pricing",
+        "header": [],
+        "description": "Canonical Pricing V2 catalog\noperationId: public_pricing_v1_pricing_get\nAuthentication: public",
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "capabilities_v1_capabilities_get",
+      "request": {
+        "method": "GET",
         "url": "{{base_url}}/v1/capabilities",
-        "description": "01 \u00b7 Capabilities (public)"
-      }
+        "header": [],
+        "description": "List operations, limits and credit prices\noperationId: capabilities_v1_capabilities_get\nAuthentication: public",
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": []
     },
     {
-      "name": "02 \u00b7 Wallet",
+      "name": "storage_status_v1_storage_get",
       "request": {
         "method": "GET",
+        "url": "{{base_url}}/v1/storage",
         "header": [],
-        "url": "{{base_url}}/v1/wallet",
-        "description": "02 \u00b7 Wallet"
-      }
+        "description": "Authenticated company quota and data-disk admission headroom\noperationId: storage_status_v1_storage_get\nAuthentication: company bearer key or web session"
+      },
+      "response": []
     },
     {
-      "name": "03 \u00b7 Upload source",
+      "name": "wallet_v1_wallet_get",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/v1/wallet",
+        "header": [],
+        "description": "Company credit balance and ledger\noperationId: wallet_v1_wallet_get\nAuthentication: company bearer key or web session"
+      },
+      "response": []
+    },
+    {
+      "name": "keys_v1_keys_get",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/v1/keys",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "skavio_web_account={{admin_session}}",
+            "description": "Private company administrator session; never export/share."
+          }
+        ],
+        "description": "List company API keys without their secrets\noperationId: keys_v1_keys_get\nAuthentication: company administrator web session",
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "new_key_v1_keys_post",
       "request": {
         "method": "POST",
-        "header": [],
+        "url": "{{base_url}}/v1/keys",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Cookie",
+            "value": "skavio_web_account={{admin_session}}",
+            "description": "Private company administrator session; never export/share."
+          }
+        ],
+        "description": "Create an API key; secret is shown once\noperationId: new_key_v1_keys_post\nAuthentication: company administrator web session",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Server integration\",\n  \"scopes\": [\n    \"read\",\n    \"write\"\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "revoke_v1_keys__key_id__delete",
+      "request": {
+        "method": "DELETE",
+        "url": "{{base_url}}/v1/keys/{{key_id}}",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "skavio_web_account={{admin_session}}",
+            "description": "Private company administrator session; never export/share."
+          }
+        ],
+        "description": "Revoke an API key immediately\noperationId: revoke_v1_keys__key_id__delete\nAuthentication: company administrator web session",
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "uploads_v1_uploads_post",
+      "request": {
+        "method": "POST",
         "url": "{{base_url}}/v1/uploads",
+        "header": [],
+        "description": "Upload source files and measure pages/duration\noperationId: uploads_v1_uploads_post\nAuthentication: company bearer key or web session",
         "body": {
           "mode": "formdata",
           "formdata": [
             {
               "key": "files",
               "type": "file",
-              "src": "{{source_file}}"
+              "src": []
             }
           ]
-        },
-        "description": "03 \u00b7 Upload source"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('Upload succeeded', () => pm.response.to.have.status(200));",
-              "if (pm.response.code === 200) pm.environment.set('upload_id', pm.response.json().uploads[0].id);"
-            ]
-          }
         }
-      ]
+      },
+      "response": []
     },
     {
-      "name": "04 \u00b7 Estimate credits",
+      "name": "delete_upload_v1_uploads__upload_id__delete",
+      "request": {
+        "method": "DELETE",
+        "url": "{{base_url}}/v1/uploads/{{upload_id}}",
+        "header": [],
+        "description": "Delete an unused source file\noperationId: delete_upload_v1_uploads__upload_id__delete\nAuthentication: company bearer key or web session"
+      },
+      "response": []
+    },
+    {
+      "name": "estimate_v1_estimate_post",
       "request": {
         "method": "POST",
+        "url": "{{base_url}}/v1/estimate",
         "header": [
           {
             "key": "Content-Type",
             "value": "application/json"
           }
         ],
-        "url": "{{base_url}}/v1/estimate",
+        "description": "Get a credit quote without starting processing\noperationId: estimate_v1_estimate_post\nAuthentication: company bearer key or web session",
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"operation\": \"flow-extract\",\n  \"upload_ids\": [\n    \"{{upload_id}}\"\n  ],\n  \"fields\": [\n    \"supplier\",\n    \"invoice_number\",\n    \"currency\",\n    \"total\"\n  ]\n}",
+          "raw": "{\n  \"operation\": \"txt\",\n  \"upload_ids\": [\n    \"{{upload_id}}\"\n  ]\n}",
           "options": {
             "raw": {
               "language": "json"
             }
           }
-        },
-        "description": "04 \u00b7 Estimate credits"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('Estimate succeeded', () => pm.response.to.have.status(200));",
-              "if (pm.response.code === 200) pm.environment.set('max_credits', pm.response.json().estimated_credits);"
-            ]
-          }
         }
-      ]
+      },
+      "response": []
     },
     {
-      "name": "05 \u00b7 Submit idempotent job",
+      "name": "submit_v1_jobs_post",
       "request": {
         "method": "POST",
+        "url": "{{base_url}}/v1/jobs",
         "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          },
           {
             "key": "Idempotency-Key",
-            "value": "{{idempotency_key}}"
+            "value": "{{idempotency_key}}",
+            "description": "Persist a separate stable key for this action; replay the exact same payload."
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
           }
         ],
-        "url": "{{base_url}}/v1/jobs",
+        "description": "Reserve credits and enqueue an idempotent job\noperationId: submit_v1_jobs_post\nAuthentication: company bearer key or web session",
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"operation\": \"flow-extract\",\n  \"upload_ids\": [\n    \"{{upload_id}}\"\n  ],\n  \"fields\": [\n    \"supplier\",\n    \"invoice_number\",\n    \"currency\",\n    \"total\"\n  ]\n, \"max_credits\": {{max_credits}}\n}",
+          "raw": "{\n  \"operation\": \"txt\",\n  \"upload_ids\": [\n    \"{{upload_id}}\"\n  ],\n  \"max_credits\": 10\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "jobs_v1_jobs_get",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/v1/jobs",
+        "header": [],
+        "description": "List recent company jobs\noperationId: jobs_v1_jobs_get\nAuthentication: company bearer key or web session"
+      },
+      "response": []
+    },
+    {
+      "name": "job_v1_jobs__job_id__get",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/v1/jobs/{{job_id}}",
+        "header": [],
+        "description": "Read job status and result metadata\noperationId: job_v1_jobs__job_id__get\nAuthentication: company bearer key or web session"
+      },
+      "response": []
+    },
+    {
+      "name": "delete_job_v1_jobs__job_id__delete",
+      "request": {
+        "method": "DELETE",
+        "url": "{{base_url}}/v1/jobs/{{job_id}}",
+        "header": [],
+        "description": "Delete result data for a terminal job\noperationId: delete_job_v1_jobs__job_id__delete\nAuthentication: company bearer key or web session"
+      },
+      "response": []
+    },
+    {
+      "name": "result_v1_jobs__job_id__results__result_id__get",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/v1/jobs/{{job_id}}/results/{{result_id}}",
+        "header": [],
+        "description": "Download a completed result with authentication\noperationId: result_v1_jobs__job_id__results__result_id__get\nAuthentication: company bearer key or web session"
+      },
+      "response": []
+    },
+    {
+      "name": "workflows_v1_workflows_get",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/v1/workflows",
+        "header": [],
+        "description": "List saved company workflows\noperationId: workflows_v1_workflows_get\nAuthentication: company bearer key or web session"
+      },
+      "response": []
+    },
+    {
+      "name": "save_workflow_v1_workflows_post",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/v1/workflows",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Cookie",
+            "value": "skavio_web_account={{admin_session}}",
+            "description": "Private company administrator session; never export/share."
+          }
+        ],
+        "description": "Save reusable extraction fields and instructions\noperationId: save_workflow_v1_workflows_post\nAuthentication: company administrator web session",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
           "options": {
             "raw": {
               "language": "json"
             }
           }
         },
-        "description": "05 \u00b7 Submit idempotent job"
+        "auth": {
+          "type": "noauth"
+        }
       },
-      "event": [
-        {
-          "listen": "prerequest",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "if (!pm.environment.get('idempotency_key')) pm.environment.set('idempotency_key', pm.variables.replaceIn('{{$guid}}'));"
-            ]
-          }
-        },
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('Job accepted', () => pm.response.to.have.status(202));",
-              "if (pm.response.code === 202) pm.environment.set('job_id', pm.response.json().id);"
-            ]
-          }
-        }
-      ]
+      "response": []
     },
     {
-      "name": "06 \u00b7 Job status (poll manually)",
+      "name": "delete_workflow_v1_workflows__workflow_id__delete",
       "request": {
-        "method": "GET",
-        "header": [],
-        "url": "{{base_url}}/v1/jobs/{{job_id}}",
-        "description": "06 \u00b7 Job status (poll manually)"
+        "method": "DELETE",
+        "url": "{{base_url}}/v1/workflows/{{workflow_id}}",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "skavio_web_account={{admin_session}}",
+            "description": "Private company administrator session; never export/share."
+          }
+        ],
+        "description": "Remove a saved workflow\noperationId: delete_workflow_v1_workflows__workflow_id__delete\nAuthentication: company administrator web session",
+        "auth": {
+          "type": "noauth"
+        }
       },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('Job status returned', () => pm.response.to.have.status(200));",
-              "if (pm.response.code === 200) { const j = pm.response.json(); if (j.status === 'completed' && j.result?.files?.length) pm.environment.set('download_path', j.result.files.find(f => f.name.endsWith('.json'))?.download_path || j.result.files[0].download_path); }"
-            ]
-          }
-        }
-      ]
+      "response": []
     },
     {
-      "name": "07 \u00b7 Download completed result (Send and Download)",
+      "name": "checkout_v1_billing_checkout_post",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/v1/billing/checkout",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Cookie",
+            "value": "skavio_web_account={{admin_session}}",
+            "description": "Private company administrator session; never export/share."
+          }
+        ],
+        "description": "Create a card checkout for a credit pack\noperationId: checkout_v1_billing_checkout_post\nAuthentication: company administrator web session",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "confirm_v1_billing_confirm_post",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/v1/billing/confirm",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Cookie",
+            "value": "skavio_web_account={{admin_session}}",
+            "description": "Private company administrator session; never export/share."
+          }
+        ],
+        "description": "Reconcile a paid credit checkout\noperationId: confirm_v1_billing_confirm_post\nAuthentication: company administrator web session",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "storage_usage_v1_storage_usage_get",
       "request": {
         "method": "GET",
+        "url": "{{base_url}}/v1/storage/usage",
         "header": [],
-        "url": "{{base_url}}{{download_path}}",
-        "description": "07 \u00b7 Download completed result (Send and Download)"
-      }
+        "description": "Tenant object-storage usage and policy\noperationId: storage_usage_v1_storage_usage_get\nAuthentication: company bearer key or web session"
+      },
+      "response": []
     },
     {
-      "name": "08 \u00b7 List jobs",
+      "name": "get_storage_policy_v1_storage_policy_get",
       "request": {
         "method": "GET",
+        "url": "{{base_url}}/v1/storage/policy",
         "header": [],
-        "url": "{{base_url}}/v1/jobs",
-        "description": "08 \u00b7 List jobs"
-      }
+        "description": "Read tenant retention/archive/backup policy\noperationId: get_storage_policy_v1_storage_policy_get\nAuthentication: company bearer key or web session"
+      },
+      "response": []
     },
     {
-      "name": "09 \u00b7 List saved workflows",
+      "name": "patch_storage_policy_v1_storage_policy_patch",
+      "request": {
+        "method": "PATCH",
+        "url": "{{base_url}}/v1/storage/policy",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Cookie",
+            "value": "skavio_web_account={{admin_session}}",
+            "description": "Private company administrator session; never export/share."
+          }
+        ],
+        "description": "Update tenant storage policy\noperationId: patch_storage_policy_v1_storage_policy_patch\nAuthentication: company administrator web session",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "direct_upload_v1_storage_direct_uploads_post",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/v1/storage/direct-uploads",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "Create a tenant-scoped presigned S3 upload\noperationId: direct_upload_v1_storage_direct_uploads_post\nAuthentication: company bearer key or web session",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "complete_direct_v1_storage_direct_uploads__session_id__complete_post",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/v1/storage/direct-uploads/{{session_id}}/complete",
+        "header": [],
+        "description": "Verify a direct upload and create upload_id\noperationId: complete_direct_v1_storage_direct_uploads__session_id__complete_post\nAuthentication: company bearer key or web session"
+      },
+      "response": []
+    },
+    {
+      "name": "cloud_import_v1_storage_imports_post",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/v1/storage/imports",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "Import a file from an approved customer cloud URL\noperationId: cloud_import_v1_storage_imports_post\nAuthentication: company bearer key or web session",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "import_status_v1_storage_imports__import_id__get",
       "request": {
         "method": "GET",
+        "url": "{{base_url}}/v1/storage/imports/{{import_id}}",
         "header": [],
-        "url": "{{base_url}}/v1/workflows",
-        "description": "09 \u00b7 List saved workflows"
-      }
+        "description": "Read cloud import progress\noperationId: import_status_v1_storage_imports__import_id__get\nAuthentication: company bearer key or web session"
+      },
+      "response": []
     },
     {
-      "name": "Batch processing",
-      "description": "## Batch processing \u2014 API 1.2.0\n\nSubmit up to 100 items for any advertised operation through the same processing pipeline. A batch uses one operation/options set and creates ordinary child jobs. Processing remains one active job per company and three globally; a batch does not promise 100 parallel executions.\n\n1. Upload files with `POST /v1/uploads`; retain their upload IDs.\n2. Quote `POST /v1/batches/estimate` using `{\"operation\":\"jpg\",\"upload_ids\":[\"UPLOAD_A\",\"UPLOAD_B\"]}`.\n3. Submit the same payload to `POST /v1/batches` with `max_credits` set to the total quote and a persisted `Idempotency-Key` (8\u2013128 allowed characters).\n4. Poll `GET /v1/batches/{batch_id}`. Each `items[].job` includes status, credits and result download paths. `progress` ranges from 0 to 1; terminal states are `completed`, `partial`, `failed`.\n5. Download `GET /v1/batches/{batch_id}/results.zip` after completion. The archive includes successful results and `manifest.json`. Missing/expired files return 410. ZIP output is limited to 1 GB; use individual authenticated downloads for larger results.\n6. Use `POST /v1/batches/{batch_id}/retry-failed` with a new persisted key to create a separately billed batch of failed items. Retry requests are bound to the original batch. Download successes before retention expires.\n\nCredits reserve atomically for the complete batch. Every child has separate accounting; successful items are charged and failed items release their reservation. Replaying the same submission does not reserve credits again. Changing a request while reusing its key returns 409. Batch items count toward the 100 queued jobs per company.\n\nUse either `upload_ids` (one child per source) or `items` (explicit groups), never both. PDF merge requires groups with 2\u201320 PDFs each:\n\n```json\n{\"operation\":\"pdf-merge\",\"items\":[{\"upload_ids\":[\"PDF_A\",\"PDF_B\"]},{\"upload_ids\":[\"PDF_C\",\"PDF_D\"]}],\"webhook_mode\":\"both\"}\n```\n\nGrouped Flow inputs use the same `items` shape. Optional `webhook_id` must belong to your company. `webhook_mode` accepts `batch` (parent events), `items` (child events), or `both`. Parent events are `batch.completed`, `batch.partial`, `batch.failed`; verify the same signature and deduplicate event IDs. Parent delivery IDs are distinct from child delivery IDs.\n\n`GET /v1/batches` lists recent company batches. `DELETE /v1/batches/{batch_id}` deletes terminal result/source specifications while preserving accounting. Source/result retention is seven days. A repeated-failure guard may return 429; contact support rather than continuously resubmitting failing sources. Save exact payloads, keys and returned IDs in durable storage.\n\n",
-      "item": [
-        {
-          "name": "Batch estimate",
-          "request": {
-            "method": "POST",
-            "url": "{{base_url}}/v1/batches/estimate",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "description": "See batch-guide.md. Use private environment variables; preserve keys when replaying the same request.",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"operation\": \"{{batch_operation}}\",\n  \"upload_ids\": [\n    \"{{upload_id}}\"\n  ]\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Estimate accepted\", () => pm.response.to.have.status(200));",
-                  "if (pm.response.code === 200) pm.environment.set(\"batch_max_credits\", pm.response.json().estimated_credits);"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Submit batch",
-          "request": {
-            "method": "POST",
-            "url": "{{base_url}}/v1/batches",
-            "header": [
-              {
-                "key": "Idempotency-Key",
-                "value": "{{batch_idempotency_key}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "description": "See batch-guide.md. Use private environment variables; preserve keys when replaying the same request.",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"operation\": \"{{batch_operation}}\",\n  \"upload_ids\": [\n    \"{{upload_id}}\"\n  ],\n  \"max_credits\": {{batch_max_credits}},\n  \"webhook_mode\": \"batch\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Batch accepted\", () => pm.response.to.have.status(202));",
-                  "if (pm.response.code === 202) pm.environment.set(\"batch_id\", pm.response.json().id);"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Batch list",
-          "request": {
-            "method": "GET",
-            "url": "{{base_url}}/v1/batches",
-            "header": [],
-            "description": "See batch-guide.md. Use private environment variables; preserve keys when replaying the same request."
-          }
-        },
-        {
-          "name": "Batch progress",
-          "request": {
-            "method": "GET",
-            "url": "{{base_url}}/v1/batches/{{batch_id}}",
-            "header": [],
-            "description": "See batch-guide.md. Use private environment variables; preserve keys when replaying the same request."
-          }
-        },
-        {
-          "name": "Download batch ZIP",
-          "request": {
-            "method": "GET",
-            "url": "{{base_url}}/v1/batches/{{batch_id}}/results.zip",
-            "header": [],
-            "description": "See batch-guide.md. Use private environment variables; preserve keys when replaying the same request."
-          }
-        },
-        {
-          "name": "Retry failed items",
-          "request": {
-            "method": "POST",
-            "url": "{{base_url}}/v1/batches/{{batch_id}}/retry-failed",
-            "header": [
-              {
-                "key": "Idempotency-Key",
-                "value": "{{batch_retry_idempotency_key}}"
-              }
-            ],
-            "description": "See batch-guide.md. Use private environment variables; preserve keys when replaying the same request."
-          }
-        },
-        {
-          "name": "Delete terminal batch results",
-          "request": {
-            "method": "DELETE",
-            "url": "{{base_url}}/v1/batches/{{batch_id}}",
-            "header": [],
-            "description": "See batch-guide.md. Use private environment variables; preserve keys when replaying the same request."
-          }
-        }
-      ]
+      "name": "objects_v1_storage_objects_get",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/v1/storage/objects",
+        "header": [],
+        "description": "List recent tenant storage objects\noperationId: objects_v1_storage_objects_get\nAuthentication: company bearer key or web session"
+      },
+      "response": []
     },
     {
-      "name": "Bulk processing \u00b7 API 1.5.0",
-      "description": "Resumable storage-aware workloads up to 100,000 items.",
-      "item": [
-        {
-          "name": "Storage headroom",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": "{{base_url}}/v1/storage",
-            "description": "Authenticated company quota, logical reservations and current data-disk admission headroom."
-          }
-        },
-        {
-          "name": "Create bulk manifest",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Idempotency-Key",
-                "value": "{{bulk_idempotency_key}}",
-                "type": "text"
-              }
-            ],
-            "url": "{{base_url}}/v1/bulks",
-            "description": "Declare up to 100,000 items and reserve storage headroom without eagerly creating every child job.",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"operation\": \"{{bulk_operation}}\",\n  \"total_items\": 2,\n  \"declared_input_bytes\": 50000000,\n  \"declared_output_bytes\": 100000000,\n  \"declared_scratch_bytes\": 200000000,\n  \"max_credits\": 5000,\n  \"webhook_mode\": \"bulk\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "if (pm.response.code === 202) {",
-                  "  const body = pm.response.json();",
-                  "  if (body.id) pm.collectionVariables.set(bulk_id, body.id);",
-                  "}"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Append manifest page",
-          "request": {
-            "method": "PUT",
-            "header": [],
-            "url": "{{base_url}}/v1/bulks/{{bulk_id}}/manifest",
-            "description": "Append the next immutable 1\u2013100 item manifest page. Replaying the same offset and payload is safe.",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"offset\": 0,\n  \"items\": [\n    {\"upload_ids\":[\"{{bulk_upload_id_1}}\"],\"output_bytes\":50000000,\"scratch_bytes\":100000000},\n    {\"upload_ids\":[\"{{bulk_upload_id_2}}\"],\"output_bytes\":50000000,\"scratch_bytes\":100000000}\n  ]\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "Seal bulk",
-          "request": {
-            "method": "POST",
-            "header": [],
-            "url": "{{base_url}}/v1/bulks/{{bulk_id}}/seal",
-            "description": "Preflight the complete measured manifest and enable bounded incremental dispatch."
-          }
-        },
-        {
-          "name": "Bulk status",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": "{{base_url}}/v1/bulks/{{bulk_id}}",
-            "description": "Read resumable parent status, progress and pause reason."
-          }
-        },
-        {
-          "name": "Bulk items page",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": "{{base_url}}/v1/bulks/{{bulk_id}}/items?after=-1&limit=100",
-            "description": "Authenticated bounded manifest and per-item status page."
-          }
-        },
-        {
-          "name": "Bulk outputs page",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": "{{base_url}}/v1/bulks/{{bulk_id}}/outputs?after=-1&limit=100",
-            "description": "Authenticated bounded output page; result downloads reuse company authorization."
-          }
-        },
-        {
-          "name": "Resume paused bulk",
-          "request": {
-            "method": "POST",
-            "header": [],
-            "url": "{{base_url}}/v1/bulks/{{bulk_id}}/resume",
-            "description": "Recheck storage and authorization before continuing a paused sealed manifest."
-          }
-        },
-        {
-          "name": "Retry failed bulk items",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Idempotency-Key",
-                "value": "{{bulk_retry_idempotency_key}}",
-                "type": "text"
-              }
-            ],
-            "url": "{{base_url}}/v1/bulks/{{bulk_id}}/retry-failed",
-            "description": "Reset failed items only. Successful items are not reset or charged again."
-          }
-        },
-        {
-          "name": "Cancel future bulk dispatch",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": "{{base_url}}/v1/bulks/{{bulk_id}}",
-            "description": "Cancel future dispatch after already admitted active children have finished."
-          }
-        }
-      ]
+      "name": "object_status_v1_storage_objects__object_id__get",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/v1/storage/objects/{{object_id}}",
+        "header": [],
+        "description": "Inspect an owned storage object\noperationId: object_status_v1_storage_objects__object_id__get\nAuthentication: company bearer key or web session"
+      },
+      "response": []
     },
     {
-      "name": "Storage Fabric \u00b7 API 1.6.0",
-      "description": "# Storage Fabric \u2014 API 1.6.0\n\nContract: /v1, API 1.6.0 + Pricing V2. Released 2026-10-04.\n\nNew sources and results use private S3 object storage. Existing valid local uploads/results remain compatible. All API calls below use the company-scoped Bearer key; signed storage URLs need no API key. Never forward your Skavio key to a storage host.\n\n## Direct upload\n\n1. POST /v1/storage/direct-uploads with filename, size_bytes, optional content_type and SHA-256 (recommended).\n2. POST multipart/form-data to the returned url. Copy every returned fields entry unchanged and append file last. Do not manually set the multipart Content-Type.\n3. POST /v1/storage/direct-uploads/{upload_session_id}/complete. The server verifies bytes and the supplied SHA-256 and freezes the accepted object. Only this successful response makes the source usable.\n4. Use response.upload.id in the existing estimate/jobs/batches/bulks APIs.\n\nDirect uploads accept 1\u2013524,288,000 bytes (500 MiB). Sessions default to 900 seconds, configurable 60\u20133,600. Storage quota and processing operation limits still apply.\n\nIn a browser, keep the API key on your application server. Obtain the signed form from your server, then:\n\n```javascript\nconst form = new FormData();\nfor (const [key, value] of Object.entries(session.fields)) form.append(key, value);\nform.append(\"file\", file);\nawait fetch(session.url, { method: \"POST\", mode: \"no-cors\", body: form });\n// The provider response is opaque: do not inspect its status or call this success.\n// Ask your server to call the authenticated /complete endpoint.\n// Treat only successful /complete (verified size/hash) as upload success.\n```\n\nThe production provider does not return an Access-Control-Allow-Origin header on signed POST responses. An ordinary cross-origin fetch that tries to read the response will fail. Do not send Authorization or custom headers to the storage URL. A network error or failed /complete must be reported/retried; an opaque POST response alone proves nothing.\n\n## Import from a customer cloud\n\nPOST /v1/storage/imports:\n```json\n{\n  \"source_url\": \"https://YOUR_APPROVED_CLOUD_HOST/path?SIGNED_QUERY\",\n  \"filename\": \"source.png\",\n  \"max_bytes\": 1048576,\n  \"expected_bytes\": 1048576,\n  \"expected_sha256\": \"YOUR_64_HEX_SHA256\"\n}\n```\nUse your actual size/hash or omit optional expected fields; always bound max_bytes. Poll GET /v1/storage/imports/{import_id}. After completed, use upload_id.\n\nOnly approved public HTTPS cloud hosts are accepted. Private/reserved addresses and redirects to unapproved destinations are rejected; DNS is pinned. Source URLs are encrypted at rest. Multipart checkpoints permit resumable transfer when the source supports stable ranged reads. Keep the signed source URL valid long enough for transfer/retries.\n\nThe request schema permits a maximum of 5,000,000,000,000 bytes; this is a protocol bound, not a promise of processing a 5 TB file. The production default quota is 2 GiB per company, and individual tools retain their limits. Query GET /v1/storage and GET /v1/storage/usage before submitting. Quota increases require an operator.\n\n## Retention, archive, hold and backup\n\nGET/PATCH /v1/storage/policy controls source_retention_days and result_retention_days (1\u201390, default 7), archive_retention_days (1\u20133,650, default 365), and backup_enabled. Policy changes govern newly admitted objects; inspect each object's retain_until. Clients cannot raise max_bytes.\n\nGET /v1/storage/objects lists tenant objects. GET /v1/storage/objects/{object_id} returns metadata. POST the object's /archive or /restore with an optional retention_days JSON field. POST /hold with {\"hold\":true} prevents deletion/expiry; release with false. DELETE removes an unheld object and its backup.\n\nBackup is opt-in, stored in a separate private bucket. POST /backup creates or repairs the verified backup; POST /restore-backup restores primary bytes after validating size/SHA-256. A separate bucket is not protection against compromise of credentials shared by both buckets. Archive is an application retention state and does not imply a provider cold-storage tier.\n\n## Downloads and compatibility\n\nAuthenticated GET /v1/storage/objects/{object_id}/download-link returns a short-lived signed URL. Existing job result download paths redirect with HTTP 307 to signed URLs. Follow the redirect without forwarding the API key to the storage host. Server-side curl: use -L; do not use --location-trusted. Downloads and object IDs from another company return 404.\n\nPricing V2, /v1 route names, idempotent job submission, batches and bulk manifests remain compatible. Downloads expire according to the object's retention and hold state. Consult the live OpenAPI contract for exact schemas and errors.\n",
-      "item": [
-        {
-          "name": "GET /v1/storage",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/v1/storage",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "v1",
-                "storage"
-              ]
-            },
-            "description": "Authenticated company quota and data-disk admission headroom\n\nSee Storage Fabric folder guide. Mutating requests affect your own company data."
-          }
-        },
-        {
-          "name": "GET /v1/storage/usage",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/v1/storage/usage",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "v1",
-                "storage",
-                "usage"
-              ]
-            },
-            "description": "Tenant object-storage usage and policy\n\nSee Storage Fabric folder guide. Mutating requests affect your own company data."
-          }
-        },
-        {
-          "name": "GET /v1/storage/policy",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/v1/storage/policy",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "v1",
-                "storage",
-                "policy"
-              ]
-            },
-            "description": "Read tenant retention/archive/backup policy\n\nSee Storage Fabric folder guide. Mutating requests affect your own company data."
-          }
-        },
-        {
-          "name": "PATCH /v1/storage/policy",
-          "request": {
-            "method": "PATCH",
-            "url": {
-              "raw": "{{base_url}}/v1/storage/policy",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "v1",
-                "storage",
-                "policy"
-              ]
-            },
-            "description": "Update tenant storage policy\n\nSee Storage Fabric folder guide. Mutating requests affect your own company data.",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"source_retention_days\": 7,\n  \"result_retention_days\": 7,\n  \"archive_retention_days\": 365,\n  \"backup_enabled\": false\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "POST /v1/storage/direct-uploads",
-          "request": {
-            "method": "POST",
-            "url": {
-              "raw": "{{base_url}}/v1/storage/direct-uploads",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "v1",
-                "storage",
-                "direct-uploads"
-              ]
-            },
-            "description": "Create a tenant-scoped presigned S3 upload\n\nSee Storage Fabric folder guide. Mutating requests affect your own company data.",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"filename\": \"source.png\",\n  \"size_bytes\": {{source_size_bytes}},\n  \"sha256\": \"{{source_sha256}}\",\n  \"content_type\": \"image/png\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Successful response\", () => pm.expect(pm.response.code).to.be.below(300));",
-                  "if (pm.response.code < 300) { const data = pm.response.json();",
-                  "if (data.upload_session_id) pm.environment.set(\"upload_session_id\", data.upload_session_id);",
-                  "if (data.object_id) pm.environment.set(\"storage_object_id\", data.object_id);",
-                  "pm.environment.set(\"direct_upload_url\", data.url); pm.environment.set(\"direct_upload_fields\", JSON.stringify(data.fields));",
-                  "}"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "POST signed S3 form (no API key)",
-          "request": {
-            "method": "POST",
-            "auth": {
-              "type": "noauth"
-            },
-            "url": "{{direct_upload_url}}",
-            "description": "Run after creating a direct upload session. This request sends the returned signed fields unchanged and appends source_file. Keep URLs/fields in a private environment. Complete only after upload; completion verifies bytes/hash.",
-            "body": {
-              "mode": "formdata",
-              "formdata": [
-                {
-                  "key": "file",
-                  "type": "file",
-                  "src": "{{source_file}}"
-                }
-              ]
-            }
-          },
-          "event": [
-            {
-              "listen": "prerequest",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "const fields = JSON.parse(pm.environment.get(\"direct_upload_fields\") || \"{}\");",
-                  "if (!Object.keys(fields).length) throw new Error(\"Create a direct upload session first\");",
-                  "pm.request.body.update({ mode: \"formdata\", formdata: [...Object.entries(fields).map(([key, value]) => ({ key, value, type: \"text\" })), { key: \"file\", type: \"file\", src: pm.variables.get(\"source_file\") }] });"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "POST /v1/storage/direct-uploads/{session_id}/complete",
-          "request": {
-            "method": "POST",
-            "url": {
-              "raw": "{{base_url}}/v1/storage/direct-uploads/{{upload_session_id}}/complete",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "v1",
-                "storage",
-                "direct-uploads",
-                "{{upload_session_id}}",
-                "complete"
-              ]
-            },
-            "description": "Verify a direct upload and create upload_id\n\nSee Storage Fabric folder guide. Mutating requests affect your own company data."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Successful response\", () => pm.expect(pm.response.code).to.be.below(300));",
-                  "if (pm.response.code < 300) { const data = pm.response.json();",
-                  "if (data.upload) pm.environment.set(\"upload_id\", data.upload.id);",
-                  "if (data.object) pm.environment.set(\"storage_object_id\", data.object.id);",
-                  "}"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "POST /v1/storage/imports",
-          "request": {
-            "method": "POST",
-            "url": {
-              "raw": "{{base_url}}/v1/storage/imports",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "v1",
-                "storage",
-                "imports"
-              ]
-            },
-            "description": "Import a file from an approved customer cloud URL\n\nSee Storage Fabric folder guide. Mutating requests affect your own company data.",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"source_url\": \"{{cloud_source_url}}\",\n  \"filename\": \"cloud.png\",\n  \"max_bytes\": {{source_size_bytes}}\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Successful response\", () => pm.expect(pm.response.code).to.be.below(300));",
-                  "if (pm.response.code < 300) { const data = pm.response.json();",
-                  "if (data.id) pm.environment.set(\"storage_import_id\", data.id);",
-                  "if (data.object_id) pm.environment.set(\"storage_object_id\", data.object_id);",
-                  "}"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "GET /v1/storage/imports/{import_id}",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/v1/storage/imports/{{storage_import_id}}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "v1",
-                "storage",
-                "imports",
-                "{{storage_import_id}}"
-              ]
-            },
-            "description": "Read cloud import progress\n\nSee Storage Fabric folder guide. Mutating requests affect your own company data."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Successful response\", () => pm.expect(pm.response.code).to.be.below(300));",
-                  "if (pm.response.code < 300) { const data = pm.response.json();",
-                  "if (data.status === \"completed\" && data.upload_id) pm.environment.set(\"upload_id\", data.upload_id);",
-                  "}"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "GET /v1/storage/objects",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/v1/storage/objects",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "v1",
-                "storage",
-                "objects"
-              ]
-            },
-            "description": "List recent tenant storage objects\n\nSee Storage Fabric folder guide. Mutating requests affect your own company data."
-          }
-        },
-        {
-          "name": "GET /v1/storage/objects/{object_id}",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/v1/storage/objects/{{storage_object_id}}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "v1",
-                "storage",
-                "objects",
-                "{{storage_object_id}}"
-              ]
-            },
-            "description": "Inspect an owned storage object\n\nSee Storage Fabric folder guide. Mutating requests affect your own company data."
-          }
-        },
-        {
-          "name": "DELETE /v1/storage/objects/{object_id}",
-          "request": {
-            "method": "DELETE",
-            "url": {
-              "raw": "{{base_url}}/v1/storage/objects/{{storage_object_id}}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "v1",
-                "storage",
-                "objects",
-                "{{storage_object_id}}"
-              ]
-            },
-            "description": "Delete an object and configured backup\n\nSee Storage Fabric folder guide. Mutating requests affect your own company data."
-          }
-        },
-        {
-          "name": "GET /v1/storage/objects/{object_id}/download-link",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/v1/storage/objects/{{storage_object_id}}/download-link",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "v1",
-                "storage",
-                "objects",
-                "{{storage_object_id}}",
-                "download-link"
-              ]
-            },
-            "description": "Create a short authenticated S3 download link\n\nSee Storage Fabric folder guide. Mutating requests affect your own company data."
-          }
-        },
-        {
-          "name": "POST /v1/storage/objects/{object_id}/backup",
-          "request": {
-            "method": "POST",
-            "url": {
-              "raw": "{{base_url}}/v1/storage/objects/{{storage_object_id}}/backup",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "v1",
-                "storage",
-                "objects",
-                "{{storage_object_id}}",
-                "backup"
-              ]
-            },
-            "description": "Create or retry an owned object backup\n\nSee Storage Fabric folder guide. Mutating requests affect your own company data."
-          }
-        },
-        {
-          "name": "POST /v1/storage/objects/{object_id}/restore-backup",
-          "request": {
-            "method": "POST",
-            "url": {
-              "raw": "{{base_url}}/v1/storage/objects/{{storage_object_id}}/restore-backup",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "v1",
-                "storage",
-                "objects",
-                "{{storage_object_id}}",
-                "restore-backup"
-              ]
-            },
-            "description": "Recover a retained object from verified backup\n\nSee Storage Fabric folder guide. Mutating requests affect your own company data."
-          }
-        },
-        {
-          "name": "POST /v1/storage/objects/{object_id}/archive",
-          "request": {
-            "method": "POST",
-            "url": {
-              "raw": "{{base_url}}/v1/storage/objects/{{storage_object_id}}/archive",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "v1",
-                "storage",
-                "objects",
-                "{{storage_object_id}}",
-                "archive"
-              ]
-            },
-            "description": "Move an object into archive retention\n\nSee Storage Fabric folder guide. Mutating requests affect your own company data.",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "POST /v1/storage/objects/{object_id}/restore",
-          "request": {
-            "method": "POST",
-            "url": {
-              "raw": "{{base_url}}/v1/storage/objects/{{storage_object_id}}/restore",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "v1",
-                "storage",
-                "objects",
-                "{{storage_object_id}}",
-                "restore"
-              ]
-            },
-            "description": "Restore an archived object\n\nSee Storage Fabric folder guide. Mutating requests affect your own company data.",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "POST /v1/storage/objects/{object_id}/hold",
-          "request": {
-            "method": "POST",
-            "url": {
-              "raw": "{{base_url}}/v1/storage/objects/{{storage_object_id}}/hold",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "v1",
-                "storage",
-                "objects",
-                "{{storage_object_id}}",
-                "hold"
-              ]
-            },
-            "description": "Enable or remove application-level deletion hold\n\nSee Storage Fabric folder guide. Mutating requests affect your own company data.",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"hold\": true\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "GET /v1/storage/audit",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/v1/storage/audit",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "v1",
-                "storage",
-                "audit"
-              ]
-            },
-            "description": "List storage audit events\n\nSee Storage Fabric folder guide. Mutating requests affect your own company data."
-          }
-        }
-      ]
+      "name": "object_delete_v1_storage_objects__object_id__delete",
+      "request": {
+        "method": "DELETE",
+        "url": "{{base_url}}/v1/storage/objects/{{object_id}}",
+        "header": [],
+        "description": "Delete an object and configured backup\noperationId: object_delete_v1_storage_objects__object_id__delete\nAuthentication: company bearer key or web session"
+      },
+      "response": []
     },
     {
-      "name": "Usage, budgets and recovery \u00b7 API 1.7.0",
-      "description": "# Usage, budgets and recovery \u2014 API 1.7.0\n\nAll routes remain under `/v1`. Existing jobs, batches, bulks, Storage Fabric and Pricing V2 are supported. Company ownership and existing read/write key scopes still apply.\n\n## Observe consumption\n\n`GET /v1/usage?month=2026-10` separates charged credits and outstanding reservations, grouped by operation, web/API channel and API key. Optional `key_id` narrows attribution. `GET /v1/usage/jobs` supports a stable `cursor` and a limit of 1\u2013200. `GET /v1/usage/export.csv` exports up to 10,000 rows with spreadsheet-formula protection. `GET /v1/usage/payments` separately lists monetary payment records; usage credits are not cash revenue or fiscal invoices.\n\nThe calendar month uses UTC **job admission time**, even if completion falls in a later month. Historical jobs cannot be reliably attributed to an API key before 1.7; their company attribution remains available.\n\n## Control spending and keys\n\n`GET /v1/budgets` returns company and key budgets. A signed-in company administrator can use `PUT /v1/budgets`:\n\n```json\n{\"monthly_credits\":100000,\"warning_percent\":80,\"low_balance\":1000,\"key_id\":null}\n```\n\n`null` monthly_credits removes a ceiling; zero blocks new charged work. A key_id applies the limit to that key. A limit below existing charges/reservations is rejected. Admission checks occur atomically with wallet reservation for standalone jobs, entire batches, incremental bulk child batches and paid web tools. HTTP 409 with error_code `budget_exceeded` rejects new work. Existing accepted work retains its quoted amount. Bulk processing pauses when its budget or original key policy prevents further child admission.\n\n`GET /v1/keys/{key_id}/policy` reads key policy for a company administrator. Session-only `PUT` can set an aware future `expires_at` timestamp and permissions `read`, `upload`, `process`, `results`. These restrict existing scopes. Empty permissions deny all; null restores the original scope behavior. An API key cannot increase its own budget or permissions. Administrative writes require a same-origin administrator web session, not a Bearer token; use the dashboard or a properly configured session cookie.\n\n## Handle operational issues\n\n- `GET /v1/alerts`: persisted, deduplicated budget/low-balance warnings. The app checks periodically; this release does not send alert emails.\n- `GET /v1/operations`: company queue state, ages, retry state and attention flags. Unknown ETA is not a throughput promise.\n- `GET /v1/governance/audit`: administrator-visible policy changes, cancellations and webhook replay history.\n- `POST /v1/jobs/{job_id}/cancel`: cancels only an unstarted standalone queued job; refunds/releases its reservation once. Accepted provider work, running jobs, retries and batch children cannot be cancelled through this route. Cancellation is represented as terminal failed with a cancellation stage/error for compatibility and does not count as a processing failure.\n- `GET /v1/webhooks/deliveries?kind=job`: administrator-visible job, batch or bulk delivery history, bounded pagination.\n- `POST /v1/webhooks/deliveries/{kind}/{delivery_id}/replay`: same-origin administrator session plus a persisted Idempotency-Key. Only exhausted failed deliveries with a stored original payload and an active owned hook can be replayed. Historical payloads unavailable for safe replay return 410. At most ten manual replays, with a sixty-second cooldown. A retry of the same administrative request must keep its key. Processing and billing do not run again.\n\nWebhook receivers still verify HMAC on raw bytes and deduplicate event IDs; delivery is at least once. Sources/results still follow Storage Fabric retention and hold rules. Always follow the authenticated result path supplied by the API; do not invent a URL from a filename.\n\n## Error correlation and compatibility\n\nErrors retain `detail` and add `error_code`, `request_id`, `retryable`. Responses expose a server-generated X-Request-Id. Use error codes for decisions and retain request IDs for private support; never log keys, PDF passwords or customer documents. Validation errors do not echo secret request input. A retryable flag is not permission to blindly repeat a charged action: preserve the exact request and its original Idempotency-Key.\n\nThere is no general multi-operation chaining, full SDK, provider-side accepted-job cancellation or guaranteed throughput in this release. Processing limits remain shared across plans. Czech, German and English dashboard/developer-guide additions support mobile and desktop.\n",
-      "item": [
-        {
-          "name": "GET /v1/usage",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": "{{base_url}}/v1/usage",
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{api_key}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "GET /v1/usage/jobs",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": "{{base_url}}/v1/usage/jobs",
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{api_key}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "GET /v1/usage/payments",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": "{{base_url}}/v1/usage/payments",
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{api_key}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "GET /v1/usage/export.csv",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": "{{base_url}}/v1/usage/export.csv",
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{api_key}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "GET /v1/budgets",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": "{{base_url}}/v1/budgets",
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{api_key}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "PUT /v1/budgets",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Origin",
-                "value": "{{base_url}}"
-              }
-            ],
-            "url": "{{base_url}}/v1/budgets",
-            "description": "\nRequires an administrator web session cookie. Bearer keys cannot change this policy.",
-            "auth": {
-              "type": "noauth"
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"monthly_credits\": 100000,\n  \"warning_percent\": 80,\n  \"low_balance\": 1000,\n  \"key_id\": null\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "GET /v1/alerts",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": "{{base_url}}/v1/alerts",
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{api_key}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "PUT /v1/keys/{key_id}/policy",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Origin",
-                "value": "{{base_url}}"
-              }
-            ],
-            "url": "{{base_url}}/v1/keys/{{key_id}}/policy",
-            "description": "\nRequires an administrator web session cookie. Bearer keys cannot change this policy.",
-            "auth": {
-              "type": "noauth"
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"expires_at\": null,\n  \"permissions\": [\n    \"read\",\n    \"upload\",\n    \"process\",\n    \"results\"\n  ]\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "GET /v1/keys/{key_id}/policy",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": "{{base_url}}/v1/keys/{{key_id}}/policy",
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{api_key}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "GET /v1/governance/audit",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": "{{base_url}}/v1/governance/audit",
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{api_key}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "POST /v1/jobs/{job_id}/cancel",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Origin",
-                "value": "{{base_url}}"
-              }
-            ],
-            "url": "{{base_url}}/v1/jobs/{{job_id}}/cancel",
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{api_key}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "GET /v1/operations",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": "{{base_url}}/v1/operations",
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{api_key}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "GET /v1/webhooks/deliveries",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": "{{base_url}}/v1/webhooks/deliveries",
-            "description": "",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{api_key}}",
-                  "type": "string"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "POST /v1/webhooks/deliveries/{kind}/{delivery_id}/replay",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Origin",
-                "value": "{{base_url}}"
-              },
-              {
-                "key": "Idempotency-Key",
-                "value": "{{replay_idempotency_key}}"
-              }
-            ],
-            "url": "{{base_url}}/v1/webhooks/deliveries/{{kind}}/{{delivery_id}}/replay",
-            "description": "\nRequires an administrator web session cookie. Bearer keys cannot change this policy.",
-            "auth": {
-              "type": "noauth"
-            }
-          },
-          "response": []
+      "name": "object_download_v1_storage_objects__object_id__download_link_get",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/v1/storage/objects/{{object_id}}/download-link",
+        "header": [],
+        "description": "Create a short authenticated S3 download link\noperationId: object_download_v1_storage_objects__object_id__download_link_get\nAuthentication: company bearer key or web session"
+      },
+      "response": []
+    },
+    {
+      "name": "object_backup_v1_storage_objects__object_id__backup_post",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/v1/storage/objects/{{object_id}}/backup",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "skavio_web_account={{admin_session}}",
+            "description": "Private company administrator session; never export/share."
+          }
+        ],
+        "description": "Create or retry an owned object backup\noperationId: object_backup_v1_storage_objects__object_id__backup_post\nAuthentication: company administrator web session",
+        "auth": {
+          "type": "noauth"
         }
-      ]
+      },
+      "response": []
+    },
+    {
+      "name": "object_restore_backup_v1_storage_objects__object_id__restore_backup_post",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/v1/storage/objects/{{object_id}}/restore-backup",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "skavio_web_account={{admin_session}}",
+            "description": "Private company administrator session; never export/share."
+          }
+        ],
+        "description": "Recover a retained object from verified backup\noperationId: object_restore_backup_v1_storage_objects__object_id__restore_backup_post\nAuthentication: company administrator web session",
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "object_archive_v1_storage_objects__object_id__archive_post",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/v1/storage/objects/{{object_id}}/archive",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "Move an object into archive retention\noperationId: object_archive_v1_storage_objects__object_id__archive_post\nAuthentication: company bearer key or web session",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"retention_days\": 365\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "object_restore_v1_storage_objects__object_id__restore_post",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/v1/storage/objects/{{object_id}}/restore",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "Restore an archived object\noperationId: object_restore_v1_storage_objects__object_id__restore_post\nAuthentication: company bearer key or web session",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"retention_days\": 7\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "object_hold_v1_storage_objects__object_id__hold_post",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/v1/storage/objects/{{object_id}}/hold",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Cookie",
+            "value": "skavio_web_account={{admin_session}}",
+            "description": "Private company administrator session; never export/share."
+          }
+        ],
+        "description": "Enable or remove application-level deletion hold\noperationId: object_hold_v1_storage_objects__object_id__hold_post\nAuthentication: company administrator web session",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"hold\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "storage_audit_v1_storage_audit_get",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/v1/storage/audit",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "skavio_web_account={{admin_session}}",
+            "description": "Private company administrator session; never export/share."
+          }
+        ],
+        "description": "List storage audit events\noperationId: storage_audit_v1_storage_audit_get\nAuthentication: company administrator web session",
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "usage_v1_usage_get",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/v1/usage",
+        "header": [],
+        "description": "Monthly company usage, reservations and operation/key totals\noperationId: usage_v1_usage_get\nAuthentication: company bearer key or web session"
+      },
+      "response": []
+    },
+    {
+      "name": "history_v1_usage_jobs_get",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/v1/usage/jobs",
+        "header": [],
+        "description": "Cursor-paginated usage history including web tools\noperationId: history_v1_usage_jobs_get\nAuthentication: company bearer key or web session"
+      },
+      "response": []
+    },
+    {
+      "name": "payments_v1_usage_payments_get",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/v1/usage/payments",
+        "header": [],
+        "description": "Company credit-pack and subscription payment records, separate from usage\noperationId: payments_v1_usage_payments_get\nAuthentication: company bearer key or web session"
+      },
+      "response": []
+    },
+    {
+      "name": "export_v1_usage_export_csv_get",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/v1/usage/export.csv",
+        "header": [],
+        "description": "Bounded CSV export of monthly company usage\noperationId: export_v1_usage_export_csv_get\nAuthentication: company bearer key or web session"
+      },
+      "response": []
+    },
+    {
+      "name": "budgets_v1_budgets_get",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/v1/budgets",
+        "header": [],
+        "description": "Company and API-key monthly credit budgets\noperationId: budgets_v1_budgets_get\nAuthentication: company bearer key or web session"
+      },
+      "response": []
+    },
+    {
+      "name": "set_budget_v1_budgets_put",
+      "request": {
+        "method": "PUT",
+        "url": "{{base_url}}/v1/budgets",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Cookie",
+            "value": "skavio_web_account={{admin_session}}",
+            "description": "Private company administrator session; never export/share."
+          }
+        ],
+        "description": "Set company/key budget; reservations count toward the ceiling\noperationId: set_budget_v1_budgets_put\nAuthentication: company administrator web session",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "alerts_v1_alerts_get",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/v1/alerts",
+        "header": [],
+        "description": "Persistent company budget and low-credit alerts\noperationId: alerts_v1_alerts_get\nAuthentication: company bearer key or web session"
+      },
+      "response": []
+    },
+    {
+      "name": "key_policy_v1_keys__key_id__policy_put",
+      "request": {
+        "method": "PUT",
+        "url": "{{base_url}}/v1/keys/{{key_id}}/policy",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Cookie",
+            "value": "skavio_web_account={{admin_session}}",
+            "description": "Private company administrator session; never export/share."
+          }
+        ],
+        "description": "Set key expiry and granular operation permissions\noperationId: key_policy_v1_keys__key_id__policy_put\nAuthentication: company administrator web session",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "get_key_policy_v1_keys__key_id__policy_get",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/v1/keys/{{key_id}}/policy",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "skavio_web_account={{admin_session}}",
+            "description": "Private company administrator session; never export/share."
+          }
+        ],
+        "description": "Read owned API-key expiry and operation permissions\noperationId: get_key_policy_v1_keys__key_id__policy_get\nAuthentication: company administrator web session",
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "audit_v1_governance_audit_get",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/v1/governance/audit",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "skavio_web_account={{admin_session}}",
+            "description": "Private company administrator session; never export/share."
+          }
+        ],
+        "description": "Administrator audit history for budgets, key policies, cancellation and webhook recovery\noperationId: audit_v1_governance_audit_get\nAuthentication: company administrator web session",
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "cancel_v1_jobs__job_id__cancel_post",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/v1/jobs/{{job_id}}/cancel",
+        "header": [],
+        "description": "Cancel an unstarted standalone queued job and release credits once\noperationId: cancel_v1_jobs__job_id__cancel_post\nAuthentication: company bearer key or web session"
+      },
+      "response": []
+    },
+    {
+      "name": "operations_v1_operations_get",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/v1/operations",
+        "header": [],
+        "description": "Authenticated company queue and processing health\noperationId: operations_v1_operations_get\nAuthentication: company bearer key or web session"
+      },
+      "response": []
+    },
+    {
+      "name": "deliveries_v1_webhooks_deliveries_get",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/v1/webhooks/deliveries",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "skavio_web_account={{admin_session}}",
+            "description": "Private company administrator session; never export/share."
+          }
+        ],
+        "description": "Company delivery history for jobs, batches and bulks\noperationId: deliveries_v1_webhooks_deliveries_get\nAuthentication: company administrator web session",
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "replay_v1_webhooks_deliveries__kind___delivery_id__replay_post",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/v1/webhooks/deliveries/{{kind}}/{{delivery_id}}/replay",
+        "header": [
+          {
+            "key": "Idempotency-Key",
+            "value": "{{idempotency_key}}",
+            "description": "Persist a separate stable key for this action; replay the exact same payload."
+          },
+          {
+            "key": "Cookie",
+            "value": "skavio_web_account={{admin_session}}",
+            "description": "Private company administrator session; never export/share."
+          }
+        ],
+        "description": "Replay an exhausted delivery with the original event ID and frozen body\noperationId: replay_v1_webhooks_deliveries__kind___delivery_id__replay_post\nAuthentication: company administrator web session",
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "webhooks_v1_webhooks_get",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/v1/webhooks",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "skavio_web_account={{admin_session}}",
+            "description": "Private company administrator session; never export/share."
+          }
+        ],
+        "description": "List webhook URLs and delivery history\noperationId: webhooks_v1_webhooks_get\nAuthentication: company administrator web session",
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "create_v1_webhooks_post",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/v1/webhooks",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Cookie",
+            "value": "skavio_web_account={{admin_session}}",
+            "description": "Private company administrator session; never export/share."
+          }
+        ],
+        "description": "Register a signed completion callback\noperationId: create_v1_webhooks_post\nAuthentication: company administrator web session",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"url\": \"https://{{webhook_host}}/skavio-events\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "delete_v1_webhooks__webhook_id__delete",
+      "request": {
+        "method": "DELETE",
+        "url": "{{base_url}}/v1/webhooks/{{webhook_id}}",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "skavio_web_account={{admin_session}}",
+            "description": "Private company administrator session; never export/share."
+          }
+        ],
+        "description": "Disable a webhook and future deliveries\noperationId: delete_v1_webhooks__webhook_id__delete\nAuthentication: company administrator web session",
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "plans_v1_billing_plans_get",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/v1/billing/plans",
+        "header": [],
+        "description": "Monthly company credit plans\noperationId: plans_v1_billing_plans_get\nAuthentication: public",
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "status_v1_billing_subscription_get",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/v1/billing/subscription",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "skavio_web_account={{admin_session}}",
+            "description": "Private company administrator session; never export/share."
+          }
+        ],
+        "description": "Company subscription status\noperationId: status_v1_billing_subscription_get\nAuthentication: company administrator web session",
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "subscribe_v1_billing_subscribe_post",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/v1/billing/subscribe",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Cookie",
+            "value": "skavio_web_account={{admin_session}}",
+            "description": "Private company administrator session; never export/share."
+          }
+        ],
+        "description": "Start a recurring company credit plan checkout\noperationId: subscribe_v1_billing_subscribe_post\nAuthentication: company administrator web session",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "portal_v1_billing_portal_post",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/v1/billing/portal",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Cookie",
+            "value": "skavio_web_account={{admin_session}}",
+            "description": "Private company administrator session; never export/share."
+          }
+        ],
+        "description": "Manage or cancel a company subscription\noperationId: portal_v1_billing_portal_post\nAuthentication: company administrator web session",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "confirm_v1_billing_subscription_confirm_post",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/v1/billing/subscription/confirm",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Cookie",
+            "value": "skavio_web_account={{admin_session}}",
+            "description": "Private company administrator session; never export/share."
+          }
+        ],
+        "description": "Reconcile a subscription checkout and first invoice\noperationId: confirm_v1_billing_subscription_confirm_post\nAuthentication: company administrator web session",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "review_v1_jobs__job_id__review_post",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/v1/jobs/{{job_id}}/review",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Cookie",
+            "value": "skavio_web_account={{admin_session}}",
+            "description": "Private company administrator session; never export/share."
+          }
+        ],
+        "description": "Correct and approve extracted fields, regenerate exports\noperationId: review_v1_jobs__job_id__review_post\nAuthentication: company administrator web session",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": []
     }
   ]
 }

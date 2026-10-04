@@ -1,6 +1,6 @@
-# Skavio SDK 1.0.0 — Python and Node.js
+# Skavio SDK 1.1.0 — Python and Node.js
 
-Server-side clients for the production Skavio Processing API 1.8.0. Keep API keys in your company's backend, never in a public browser/mobile bundle. These clients do not grant administrator-only session permissions.
+Server-side clients for the production Skavio Processing API 1.9.0. Keep API keys in your company's backend, never in a public browser/mobile bundle. These clients do not grant administrator-only session permissions.
 
 ## Installation from this repository
 
@@ -62,7 +62,7 @@ JavaScript: `submitBatch`, `createBulk`, `appendManifest`, `sealBulk`, `getBulk`
 
 See [bulk guide](../bulk-guide.md) and [workflow guide](../workflow-guide.md) for payloads, limits and administrator review rules. Individual operations require the appropriate company/key permissions; SDK convenience methods do not bypass them.
 
-## All 87 OpenAPI operations
+## All 92 OpenAPI operations
 
 `call()` covers every `/v1/` operation from the current published OpenAPI specification. Use the exact operationId from [OpenAPI](../openapi-v1.json), pass path parameters separately, and supply a persisted idempotency key where the contract requires it.
 
@@ -88,3 +88,14 @@ node --test sdk/tests/test_javascript.mjs
 ```
 
 Offline tests cover retries, ambiguous submissions, request IDs, resumable polling, webhook integrity/freshness and credential stripping on result redirects. Public production capabilities are checked separately without submitting paid processing work.
+
+## API 1.9.0 / SDK 1.1.0
+
+The operation registry contains all 92 operations from OpenAPI 1.9.0. Use `call(operationId, ...)` for every endpoint, including tenant administration operations. Authorization remains enforced by the server.
+
+Python: `pause_bulk(id, idempotency_key=key)`, `cancel_bulk(id, idempotency_key=key)`, `notifications()`, `notification_settings()`, `update_notification_settings(settings, admin_session=session)`.
+JavaScript: `pauseBulk(id, key)`, `cancelBulk(id, key)`, `notifications()`, `notificationSettings()`, `updateNotificationSettings(settings, adminSession)`.
+
+Pause stops new admission while accepted work finishes. Cancel stops new work permanently; accepted work settles once. A cancelled bulk cannot resume. Persist separate idempotency keys for each action. Notification settings updates require a company administrator web session (`skavio_web_account`), not an API bearer key. The SDK sends the explicit admin session only for that request and omits bearer authorization. Notifications are disabled by default; email activation requires a configured production transport.
+
+Use these SDKs on trusted servers only. Never embed API keys or administrator session tokens in browser or mobile public bundles. GET retries honor numeric or HTTP-date Retry-After; mutations are never automatically retried.

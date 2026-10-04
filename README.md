@@ -11,7 +11,7 @@ One company-scoped API for document extraction, PDF and image tools, media proce
 - [DEV.to integration article](https://dev.to/skavioeu/building-a-retry-safe-file-processing-api-estimates-idempotency-and-signed-webhooks-32p6)
 - [Webhook verification](verify_webhook.py)
 
-**API route version:** /v1. **Contract snapshot:** 1.8.0 + Pricing V2, captured 2026-10-04.
+**API route version:** /v1. **Contract snapshot:** 1.9.0 + Pricing V2, captured 2026-10-04.
 
 ## What is new in API 1.7.0
 
@@ -203,5 +203,9 @@ Linear process/review/archive steps, checkpointed execution and per-step credit 
 
 ## Official SDK clients
 
-Python and Node.js clients are in [sdk/README.md](sdk/README.md). Install from this repository with `python3 -m pip install ./sdk/python` or `npm install ./sdk/javascript`. They cover all 87 current OpenAPI operations, durable submission keys, resumable polling, signed webhook verification and authenticated result downloads. Packages are not yet published to PyPI/npm.
+Python and Node.js clients are in [sdk/README.md](sdk/README.md). Install from this repository with `python3 -m pip install ./sdk/python` or `npm install ./sdk/javascript`. They cover all 92 current OpenAPI operations, durable submission keys, resumable polling, signed webhook verification and authenticated result downloads. Packages are not yet published to PyPI/npm.
 
+
+## API 1.9.0 controls and notifications
+
+Bulk pause and cancel require Idempotency-Key and enforce company isolation. Pause prevents new child admission; accepted jobs drain and settle once. Cancel is final and prevents further dispatch. GET /v1/notifications and GET /v1/notifications/settings are tenant-scoped. PUT /v1/notifications/settings requires a company administrator web session. Notifications are disabled by default; email requires configured transport. Frozen events are deduplicated and retried within a bounded delivery window. Email follows the current company billing address and supports cs/de/en.

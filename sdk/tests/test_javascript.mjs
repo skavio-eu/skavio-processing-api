@@ -16,8 +16,8 @@ test('mutation network failure not retried',async()=>{
   await assert.rejects(c.submitJob({},'business-job-123'));assert.equal(calls,1);
 });
 test('read rate limit retries',async()=>{
-  let calls=0;const c=new SkavioClient('key',{fetchImpl:async()=>++calls===1?json({},429,{'Retry-After':'0'}):json({version:'1.8.0'})});
-  assert.equal((await c.capabilities()).version,'1.8.0');assert.equal(calls,2);
+  let calls=0;const c=new SkavioClient('key',{fetchImpl:async()=>++calls===1?json({},429,{'Retry-After':'0'}):json({version:'1.9.0'})});
+  assert.equal((await c.capabilities()).version,'1.9.0');assert.equal(calls,2);
 });
 test('structured error and request ID',async()=>{
   const c=new SkavioClient('key',{fetchImpl:async()=>json({error_code:'budget_exceeded',detail:'Monthly credit budget exceeded.'},409,{'X-Request-ID':'req-1'})});

@@ -1,6 +1,7 @@
 import json
 import re
 import time
+from email.utils import parsedate_to_datetime
 from pathlib import Path
 from urllib.parse import quote, urlsplit
 import requests
@@ -33,14 +34,17 @@ class SkavioClient:
             raise ValueError('Invalid resource ID')
         return quote(value, safe='')
 
-    def request(self, method, path, *, data=None, query=None, idempotency_key=None, files=None, raw=False, timeout=None):
+    def request(self, method, path, *, data=None, query=None, idempotency_key=None, files=None, raw=False, timeout=None, admin_session=None):
         if not re.fullmatch(r'/v1/[A-Za-z0-9_./%~-]+', path) or '..' in path or '//' in path:
             raise ValueError('Expected a relative /v1/ API path')
         method = method.upper()
-        headers = {'Authorization': 'Bearer ' + self._api_key, 'User-Agent': 'skavio-python/1.0.0'}
+        headers = {'Authorization': 'Bearer ' + self._api_key, 'User-Agent': 'skavio-python/1.1.0'}
         if idempotency_key is not None:
             if not re.fullmatch(r'[A-Za-z0-9._:-]{8,128}', idempotency_key): raise ValueError('Invalid idempotency key')
             headers['Idempotency-Key'] = idempotency_key
+        if admin_session is not None:
+            if not re.fullmatch(r'[A-Za-z0-9._~-]{16,4096}', admin_session): raise ValueError('Invalid admin session')
+            headers.pop('Authorization'); headers['Cookie'] = 'skavio_web_account=' + admin_session
         retries = self.read_retries if method == 'GET' else 0
         for attempt in range(retries + 1):
             try:
@@ -51,14 +55,16 @@ class SkavioClient:
                 time.sleep(min(2 ** attempt, 10)); continue
             if response.status_code in (429, 502, 503, 504) and attempt < retries:
                 delay = response.headers.get('Retry-After', '')
-                time.sleep(min(float(delay) if delay.isdigit() else 2 ** attempt, 30)); response.close(); continue
+                try: delay = float(delay) if delay.isdigit() else max(0, parsedate_to_datetime(delay).timestamp() - time.time())
+                except (ValueError, TypeError, OverflowError): delay = 2 ** attempt
+                response.close(); time.sleep(delay); continue
             if not 200 <= response.status_code < 300:
                 try: body = response.json()
                 except ValueError: body = {}
                 detail = body.get('error', body.get('detail', {})) if isinstance(body, dict) else {}
                 error = detail if isinstance(detail, dict) else {}
                 request_id = response.headers.get('X-Request-ID') or (body.get('request_id') if isinstance(body, dict) else None)
-                raise SkavioError(response.status_code, body.get('error_code', error.get('code', 'http_error')) if isinstance(body, dict) else 'http_error', error.get('message', 'API request failed'), request_id, response.headers.get('Retry-After'))
+                raise SkavioError(response.status_code, body.get('error_code', error.get('code', 'http_error')) if isinstance(body, dict) else 'http_error', error.get('message', detail if isinstance(detail, str) else 'API request failed'), request_id, response.headers.get('Retry-After'))
             if raw: return response.content
             if response.status_code == 204 or not response.content: return None
             return response.json()
@@ -92,6 +98,34 @@ class SkavioClient:
     def append_manifest(self, bulk_id, payload): return self.request('PUT', '/v1/bulks/' + self.id(bulk_id) + '/manifest', data=payload)
     def seal_bulk(self, bulk_id): return self.request('POST', '/v1/bulks/' + self.id(bulk_id) + '/seal')
     def resume_bulk(self, bulk_id): return self.request('POST', '/v1/bulks/' + self.id(bulk_id) + '/resume')
+    def pause_bulk(self, bulk_id, *, idempotency_key): return self.request('POST', '/v1/bulks/' + self.id(bulk_id) + '/pause', idempotency_key=idempotency_key)
+    def cancel_bulk(self, bulk_id, *, idempotency_key): return self.request('POST', '/v1/bulks/' + self.id(bulk_id) + '/cancel', idempotency_key=idempotency_key)
+    def notifications(self, **query): return self.request('GET', '/v1/notifications', query=query)
+    def notification_settings(self): return self.request('GET', '/v1/notifications/settings')
+    def update_notification_settings(self, payload, *, admin_session): return self.request('PUT', '/v1/notifications/settings', data=payload, admin_session=admin_session)
+    def list_jobs(self, **query): return self.request('GET', '/v1/jobs', query=query)
+    def list_batches(self, **query): return self.request('GET', '/v1/batches', query=query)
+    def list_bulks(self, **query): return self.request('GET', '/v1/bulks', query=query)
+    def bulk_items(self, bulk_id, **query): return self.request('GET', '/v1/bulks/' + self.id(bulk_id) + '/items', query=query)
+    def bulk_outputs(self, bulk_id, **query): return self.request('GET', '/v1/bulks/' + self.id(bulk_id) + '/outputs', query=query)
+    def retry_bulk(self, bulk_id, *, idempotency_key): return self.request('POST', '/v1/bulks/' + self.id(bulk_id) + '/retry-failed', idempotency_key=idempotency_key)
+    def storage(self): return self.request('GET', '/v1/storage')
+    def list_objects(self, **query): return self.request('GET', '/v1/storage/objects', query=query)
+    def download_object(self, object_id, *, max_bytes=524288000):
+        if max_bytes <= 0: raise ValueError('Positive byte limit required')
+        link = self.request('GET', '/v1/storage/objects/' + self.id(object_id) + '/download-link')
+        url = link.get('url') or link.get('download_url'); target = urlsplit(url or '')
+        if target.scheme != 'https' or not target.hostname or target.username or target.password: raise ValueError('Unsafe signed URL')
+        with requests.Session() as transport:
+            transport.trust_env = False
+            with transport.get(url, headers={}, timeout=max(self.timeout,180), allow_redirects=False, stream=True) as response:
+                if not 200 <= response.status_code < 300: raise SkavioError(response.status_code, 'download_failed', 'Object download failed', response.headers.get('X-Request-ID'))
+                output=bytearray()
+                for chunk in response.iter_content(65536):
+                    if len(output)+len(chunk)>max_bytes: raise ValueError('Object exceeds byte limit')
+                    output.extend(chunk)
+                return bytes(output)
+
     def start_workflow(self, payload, *, idempotency_key): return self.request('POST', '/v1/workflow-runs', data=payload, idempotency_key=idempotency_key)
     def get_workflow(self, run_id): return self.request('GET', '/v1/workflow-runs/' + self.id(run_id))
     def control_workflow(self, run_id, action, *, idempotency_key, payload=None):

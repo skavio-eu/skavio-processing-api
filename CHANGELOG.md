@@ -1,3 +1,7 @@
+# API 1.9.0 / SDK 1.1.0 — 2026-10-04
+
+Added tenant-safe, idempotent bulk pause/cancel with safe in-flight drain and exactly-once settlement. Definitively cancelled bulks cannot resume. Added opt-in webhook/email notification history and company settings with frozen events, deduplication, bounded retries, billing-recipient safety and Czech/German/English text. Notifications default to disabled; email availability reflects configured transport. Python/JavaScript SDK registries cover all 92 OpenAPI operations; new convenience methods and matching TypeScript definitions include bulk controls and notification settings. Administrator settings require a company administrator web session. GET Retry-After supports HTTP dates; mutations are never automatically retried.
+
 # API 1.8.0 — 2026-10-04
 
 Durable linear workflow pipelines with process, human review and archive steps. Per-run credit caps, idempotent actions, checkpointed resume and exactly-once child-job settlement. Responsive CZ/DE/EN Dashboard controls. Production verified with actual S3 storage and conversion workers. See workflow-guide.md.

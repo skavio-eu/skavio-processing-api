@@ -1,6 +1,6 @@
 export type Json = null | boolean | number | string | Json[] | {[key: string]: Json};
 export interface ClientOptions {baseUrl?: string; timeoutMs?: number; readRetries?: number; allowHttp?: boolean; fetchImpl?: typeof fetch;}
-export interface RequestOptions {data?: unknown; query?: Record<string, string | number | boolean | null | undefined>; idempotencyKey?: string; body?: BodyInit; raw?: boolean; signal?: AbortSignal; timeoutMs?: number;}
+export interface RequestOptions {adminSession?: string; data?: unknown; query?: Record<string, string | number | boolean | null | undefined>; idempotencyKey?: string; body?: BodyInit; raw?: boolean; signal?: AbortSignal; timeoutMs?: number;}
 export interface Resource {id: string; status?: string; state?: string; [key: string]: unknown;}
 export class SkavioError extends Error {status: number; code: string; requestId?: string | null; retryAfter?: string | null;}
 export class SkavioClient {
@@ -18,6 +18,19 @@ export class SkavioClient {
   appendManifest(bulkId: string, data: unknown): Promise<Resource>;
   sealBulk(bulkId: string): Promise<Resource>;
   resumeBulk(bulkId: string): Promise<Resource>;
+  pauseBulk(bulkId: string, idempotencyKey: string): Promise<Resource>;
+  cancelBulk(bulkId: string, idempotencyKey: string): Promise<Resource>;
+  notifications(query?: RequestOptions['query']): Promise<Record<string, unknown>>;
+  notificationSettings(): Promise<Record<string, unknown>>;
+  updateNotificationSettings(data: unknown, adminSession: string): Promise<Record<string, unknown>>;
+  listJobs(query?: RequestOptions['query']): Promise<Record<string, unknown>>;
+  listBatches(query?: RequestOptions['query']): Promise<Record<string, unknown>>;
+  listBulks(query?: RequestOptions['query']): Promise<Record<string, unknown>>;
+  bulkItems(bulkId: string, query?: RequestOptions['query']): Promise<Record<string, unknown>>;
+  bulkOutputs(bulkId: string, query?: RequestOptions['query']): Promise<Record<string, unknown>>;
+  retryBulk(bulkId: string, idempotencyKey: string): Promise<Resource>;
+  storage(): Promise<Record<string, unknown>>;
+  listObjects(query?: RequestOptions['query']): Promise<Record<string, unknown>>;
   startWorkflow(data: unknown, idempotencyKey: string): Promise<Resource>;
   getWorkflow(runId: string): Promise<Resource>;
   controlWorkflow(runId: string, action: 'pause' | 'resume' | 'cancel' | 'approve', idempotencyKey: string, data?: unknown): Promise<Resource>;

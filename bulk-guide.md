@@ -132,3 +132,7 @@ Set `webhook_id` and choose `webhook_mode`:
 - `both` — both layers
 
 Webhook delivery remains at least once. Verify the HMAC signature and deduplicate event IDs.
+
+## API 1.9.0 controls and notifications
+
+Bulk pause and cancel require Idempotency-Key and enforce company isolation. Pause prevents new child admission; accepted jobs drain and settle once. Cancel is final and prevents further dispatch. GET /v1/notifications and GET /v1/notifications/settings are tenant-scoped. PUT /v1/notifications/settings requires a company administrator web session. Notifications are disabled by default; email requires configured transport. Frozen events are deduplicated and retried within a bounded delivery window. Email follows the current company billing address and supports cs/de/en.

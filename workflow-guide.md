@@ -1,4 +1,4 @@
-# Skavio API 1.8.0 — durable workflow pipelines
+# Skavio API 1.9.0 — durable workflow pipelines
 
 This candidate adds multi-step workflows. Original extraction templates under /v1/workflows remain unchanged.
 
