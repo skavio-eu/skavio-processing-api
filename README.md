@@ -78,7 +78,7 @@ node quickstart.mjs
 
 Both examples use `sample-invoice.txt`; set `SKAVIO_SOURCE` to a PDF/image/text source to change it. They estimate cost before submission and write JSON output into `results/`.
 For intentional processing of a different source or changed payload, use a **new** idempotency key.
-The examples are server-side starters, not a full SDK or a durable workflow engine.
+These examples are server-side starters. For the official Python and JavaScript SDK clients, see [sdk/README.md](sdk/README.md); durable workflow pipelines are documented in [workflow-guide.md](workflow-guide.md).
 
 ### Postman
 
@@ -97,7 +97,7 @@ Before a new business request, clear `upload_id`, `job_id`, `download_path`, `ma
 | Speech | `transcribe`, `meeting` |
 
 [Capabilities snapshot](capabilities.json) lists exact operation names. Query `GET /v1/capabilities` for current prices and limits.
-Normal file jobs accept one source; PDF merge accepts 2–20 PDFs; Flow can process multiple document sources. Transcribe and Meeting accept one media source. Batch processing supports up to 100 items. API 1.5.0 bulk manifests support up to 100,000 items with incremental dispatch; see [bulk-guide.md](bulk-guide.md). General multi-operation chaining is not available.
+Normal file jobs accept one source; PDF merge accepts 2–20 PDFs; Flow can process multiple document sources. Transcribe and Meeting accept one media source. Batch processing supports up to 100 items. API 1.5.0 bulk manifests support up to 100,000 items with incremental dispatch; see [bulk-guide.md](bulk-guide.md). Standalone jobs do not support arbitrary operation chaining. Durable linear process/review/archive pipelines are available; see [workflow guide](workflow-guide.md).
 
 ## Credits and price control
 

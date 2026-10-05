@@ -1,6 +1,6 @@
 # Skavio API 1.9.0 — durable workflow pipelines
 
-This candidate adds multi-step workflows. Original extraction templates under /v1/workflows remain unchanged.
+API 1.9.0 supports durable multi-step workflows. Original extraction templates under /v1/workflows remain unchanged.
 
 ## Start a run
 
@@ -44,6 +44,6 @@ States: queued, processing, waiting_review, pause_requested, paused, stopping, c
 
 ## Verification and deployment
 
-Synthetic accounts/documents, fake engines and mocked S3, with external provider calls disabled, verify orchestration/accounting. They do not measure provider latency/quality or real public TLS/production S3 resilience.
+Offline tests use synthetic accounts/documents, fake engines and mocked S3 to verify orchestration/accounting. Separate production release smoke tests verify real managed processing and S3; neither is a throughput benchmark or SLA.
 
-Sandbox candidate only. Production deployment and catalog publication are separate explicit steps. The previous ops/deploy170.py is not a reviewed 1.8 installer and must not be used for this candidate.
+This guide describes the published API 1.9.0 contract. See the live documentation and capabilities for current deployment limits. Processing credits and storage policies apply to workflow runs.
