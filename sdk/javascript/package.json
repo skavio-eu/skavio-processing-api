@@ -20,5 +20,9 @@
     "index.d.ts",
     "examples"
   ],
-  "types": "index.d.ts"
+  "types": "index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/skavio-eu/skavio-processing-api.git"
+  }
 }
