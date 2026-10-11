@@ -33,7 +33,7 @@ with SkavioClient(os.environ['SKAVIO_API_KEY']) as api:
 ## JavaScript
 
 ```javascript
-import {SkavioClient} from '@skavio/sdk';
+import {SkavioClient} from '@skavio-llc/sdk';
 const api = new SkavioClient(process.env.SKAVIO_API_KEY);
 const source = (await api.upload(['invoice.pdf'])).uploads[0].id;
 const payload = {operation: 'flow-extract', upload_ids: [source], fields: ['supplier', 'total']};
