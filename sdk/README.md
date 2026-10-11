@@ -2,14 +2,16 @@
 
 Server-side clients for the production Skavio Processing API 1.9.0. Keep API keys in your company's backend, never in a public browser/mobile bundle. These clients do not grant administrator-only session permissions.
 
-## Installation from this repository
+## Installation from the official registries
 
 ```bash
-python3 -m pip install ./sdk/python
-npm install ./sdk/javascript
+python3 -m pip install skavio-sdk==1.1.0
+npm install @skavio-llc/sdk@1.1.0
 ```
 
-Python 3.10+ / Node.js 22+. These packages are supplied here; they are not yet published to PyPI or npm. JavaScript includes TypeScript declarations and has no runtime dependencies.
+Source installation also works with `python3 -m pip install ./sdk/python` and `npm install ./sdk/javascript`.
+
+Python 3.10+ / Node.js 22+. Official packages are published on PyPI as `skavio-sdk==1.1.0` and npm as `@skavio-llc/sdk@1.1.0`; source installations remain available. JavaScript includes TypeScript declarations and has no runtime dependencies.
 
 ## Python: submit once, resume by job ID
 

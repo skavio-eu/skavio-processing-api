@@ -203,7 +203,7 @@ Linear process/review/archive steps, checkpointed execution and per-step credit 
 
 ## Official SDK clients
 
-Python and Node.js clients are in [sdk/README.md](sdk/README.md). Install from this repository with `python3 -m pip install ./sdk/python` or `npm install ./sdk/javascript`. They cover all 92 current OpenAPI operations, durable submission keys, resumable polling, signed webhook verification and authenticated result downloads. Packages are not yet published to PyPI/npm.
+Python and Node.js clients are in [sdk/README.md](sdk/README.md). Install from this repository with `python3 -m pip install ./sdk/python` or `npm install ./sdk/javascript`. They cover all 92 current OpenAPI operations, durable submission keys, resumable polling, signed webhook verification and authenticated result downloads. Packages are published: `pip install skavio-sdk==1.1.0` and `npm install @skavio-llc/sdk@1.1.0`.
 
 
 ## API 1.9.0 controls and notifications
