@@ -1,5 +1,17 @@
 # Skavio Processing API
 
+## Discover Skavio MCP tools
+
+**Skavio remote MCP server** — invoice OCR and extraction, PDF text extraction, document automation, image and media processing, transcription and meeting workflows for AI agents. Discover it in the [official MCP Registry](https://registry.modelcontextprotocol.io/v0.1/servers?search=skavio), or connect a compatible MCP client to `https://www.skavio.eu/processing/mcp` using your company-issued Bearer MCP credential.
+
+- [MCP setup and all available tools](https://www.skavio.eu/processing/docs/mcp/)
+- [MCP pricing and prepaid USDC credits](https://www.skavio.eu/processing/docs/mcp/pricing.html)
+- [Official MCP server manifest](server.json)
+- [x402 paid USDC verification micro-APIs](https://www.skavio.eu/x402/) · [machine-readable x402 discovery](https://www.skavio.eu/x402/.well-known/x402)
+
+The Processing MCP uses company-scoped prepaid credits; the separate x402 micro-APIs advertise payment-required responses. Neither requires exposing private keys to Skavio.
+
+
 One company-scoped API for document extraction, PDF and image tools, media processing, transcription and meetings.
 
 - [Product and pricing](https://www.skavio.eu/api/)
