@@ -1,0 +1,44 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "eu.skavio/processing",
+  "description": "Authenticated Skavio document, PDF, media and transcription processing with USDC prepaid credits.",
+  "version": "0.2.3",
+  "websiteUrl": "https://www.skavio.eu/processing/docs/mcp/",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://www.skavio.eu/processing/mcp",
+      "headers": [
+        {
+          "name": "Authorization",
+          "description": "Bearer MCP credential issued for your verified Skavio company. Create it in the Skavio dashboard; never reuse your Processing API key.",
+          "isRequired": true,
+          "isSecret": true,
+          "format": "string"
+        }
+      ]
+    }
+  ],
+  "_meta": {
+    "io.modelcontextprotocol.registry/publisher-provided": {
+      "category": "productivity",
+      "tags": [
+        "document-processing",
+        "pdf",
+        "ocr",
+        "transcription",
+        "invoice-extraction"
+      ],
+      "website": "https://www.skavio.eu/api/",
+      "documentation": "https://www.skavio.eu/processing/docs/mcp/",
+      "dashboard": "https://www.skavio.eu/dashboard/",
+      "health": "https://www.skavio.eu/processing/health",
+      "billing": "Prepaid USDC credits in the shared Skavio wallet; no separate MCP wallet or price list.",
+      "pricing": "https://www.skavio.eu/processing/docs/mcp/pricing.html",
+      "authentication": "https://www.skavio.eu/processing/docs/mcp/authentication.html",
+      "privacy": "https://www.skavio.eu/processing/docs/mcp/privacy-security.html",
+      "protocol": "Streamable HTTP (MCP 2025-06-18)",
+      "transport": "streamable-http"
+    }
+  }
+}
