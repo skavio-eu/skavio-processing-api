@@ -2,7 +2,9 @@
 
 ## Discover Skavio MCP tools
 
-**Skavio remote MCP server** — invoice OCR and extraction, PDF text extraction, document automation, image and media processing, transcription and meeting workflows for AI agents. Discover it in the [official MCP Registry](https://registry.modelcontextprotocol.io/v0.1/servers?search=skavio), or connect a compatible MCP client to `https://www.skavio.eu/processing/mcp` using your company-issued Bearer MCP credential.
+**Cursor / Claude Desktop / Claude Code setup:** [step-by-step remote MCP connections](MCP_CLIENT_SETUP.md) · [ready-to-use Cursor JSON](examples/cursor-processing-mcp.json) · [optional Claude Desktop JSON](examples/claude-desktop-processing-mcp.json). Also discover [Skavio USDC micro-APIs](https://github.com/skavio-eu/skavio-agent-tools) and their [MCP client guide](https://github.com/skavio-eu/skavio-agent-tools/blob/main/MCP_CLIENT_SETUP.md).
+
+**Skavio remote MCP server** — invoice OCR and extraction, PDF text extraction, document automation, image and media processing, transcription and meeting workflows for AI agents. Discover it in the [official MCP Registry](https://registry.modelcontextprotocol.io/v0.1/servers?search=skavio), or connect a compatible MCP client to `https://www.skavio.eu/processing/mcp` and complete OAuth, or use an explicitly issued company MCP bearer credential. Processing requires authentication.
 
 - [MCP setup and all available tools](https://www.skavio.eu/processing/docs/mcp/)
 - [MCP pricing and prepaid USDC credits](https://www.skavio.eu/processing/docs/mcp/pricing.html)
