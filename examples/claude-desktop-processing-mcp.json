@@ -2,11 +2,12 @@
   "mcpServers": {
     "skavio-processing": {
       "command": "npx",
-      "args": ["-y", "mcp-remote", "https://www.skavio.eu/processing/mcp"]
+      "args": ["-y", "mcp-remote", "https://getskavio.com/processing/mcp"]
     },
     "skavio-paid-tools": {
       "command": "npx",
-      "args": ["-y", "mcp-remote", "https://www.skavio.eu/mcp"]
+      "args": ["-y", "mcp-remote", "https://getskavio.com/mcp"]
     }
   }
 }
+
