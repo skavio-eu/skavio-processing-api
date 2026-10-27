@@ -13,7 +13,7 @@ class SkavioError(Exception):
         super().__init__(f'Skavio HTTP {status}: {code}: {message}')
 
 class SkavioClient:
-    def __init__(self, api_key, base_url='https://www.skavio.eu', timeout=30, read_retries=2, allow_http=False, session=None):
+    def __init__(self, api_key, base_url='https://getskavio.com', timeout=30, read_retries=2, allow_http=False, session=None):
         u = urlsplit(base_url)
         if not api_key or u.username or u.password or u.query or u.fragment or u.path not in ('', '/') or not u.hostname:
             raise ValueError('Use an API key and a base origin without credentials or paths')
@@ -195,3 +195,4 @@ def verify_webhook(secret, timestamp, raw_body, signature, *, now=None, toleranc
     if abs((time.time() if now is None else now) - ts) > tolerance: return False
     expected = 'v1=' + hmac.new(secret.encode(), timestamp.encode() + b'.' + raw_body, hashlib.sha256).hexdigest()
     return hmac.compare_digest(expected.encode(), signature.encode())
+
