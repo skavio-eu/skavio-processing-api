@@ -6,6 +6,12 @@
 
 Use the company's **MCP OAuth flow or an explicitly issued company MCP credential**; a generic Skavio Processing API key is **not** the MCP credential.
 
+## Smithery catalog and namespace gateway
+
+**Smithery links:** [Skavio Processing catalog profile](https://smithery.ai/servers/work-6dqn/skavio-processing) identifies this server. The [work-6dqn namespace gateway](https://mcp.smithery.ai/work-6dqn) is a Smithery-managed MCP interface requiring Smithery authorization (`connections:execute`); its available connections depend on the authorized namespace. It is not the canonical Skavio Processing endpoint. Use `https://getskavio.com/processing/mcp` with company OAuth for direct connections. Anonymous checks on 2026-10-27 confirmed the gateway's HTTP 401 and Smithery OAuth metadata, but did not establish access to Skavio tools through it. Never send a Skavio company credential to the namespace gateway.
+
+Smithery currently advertises `https://skavio-processing--work-6dqn.run.tools` for its server-specific connection. Anonymous initialization returned HTTP 401 with Smithery OAuth metadata; authenticated tool access through this proxy has not been verified. Prefer the canonical direct endpoint above.
+
 ## Cursor — copyable `.cursor/mcp.json`
 
 [Download the JSON example](examples/cursor-processing-mcp.json) or copy:
@@ -74,4 +80,5 @@ Perform OAuth and review tool permissions in the client.
 Official details: [MCP overview](https://getskavio.com/processing/docs/mcp/), [processing credits](https://getskavio.com/processing/docs/mcp/pricing.html), [Agent Tools install and examples](https://github.com/skavio-eu/skavio-agent-tools/blob/main/MCP_CLIENT_SETUP.md), [official MCP Registry](https://registry.modelcontextprotocol.io/v0/servers?search=skavio) and [PayAPI Market](https://payapi.market/) (third-party marketplace; Skavio submissions still awaiting approval).
 
 **Verification 2026-10-16:** `/processing/mcp` enforces HTTP 401 with OAuth resource metadata for anonymous calls; `/mcp` answered MCP `initialize` and returned 18 tool definitions. A successful paid settlement, client OAuth UI completion, or funded customer call **has not been established** by those probes.
+
 

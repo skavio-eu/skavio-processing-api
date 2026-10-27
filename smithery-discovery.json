@@ -1,0 +1,28 @@
+{
+  "verifiedAt": "2026-10-27",
+  "canonicalEndpoint": "https://getskavio.com/processing/mcp",
+  "catalogUrl": "https://smithery.ai/servers/work-6dqn/skavio-processing",
+  "namespaceGateway": {
+    "url": "https://mcp.smithery.ai/work-6dqn",
+    "role": "Smithery namespace MCP gateway",
+    "authorizationServer": "https://connect-auth.smithery.ai",
+    "requiredScope": "connections:execute",
+    "anonymousInitializeStatus": 401,
+    "anonymousToolsListStatus": 401,
+    "authenticatedSkavioToolsVerified": false,
+    "canonicalProcessingEndpoint": false
+  },
+  "serverProxy": {
+    "url": "https://skavio-processing--work-6dqn.run.tools",
+    "role": "Server-specific proxy advertised by Smithery",
+    "anonymousInitializeStatus": 401,
+    "authenticatedSkavioToolsVerified": false
+  },
+  "credentialPolicy": "Use Skavio company OAuth only at the canonical Processing endpoint. Do not forward Skavio company credentials to the Smithery namespace gateway.",
+  "sources": [
+    "https://smithery.ai/servers/work-6dqn/skavio-processing",
+    "https://smithery.ai/docs/use/connect",
+    "https://smithery.ai/docs/concepts/namespaces",
+    "https://mcp.smithery.ai/.well-known/oauth-protected-resource/work-6dqn"
+  ]
+}

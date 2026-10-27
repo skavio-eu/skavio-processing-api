@@ -2,6 +2,8 @@
 
 [![smithery badge](https://smithery.ai/badge/work-6dqn/skavio-processing)](https://smithery.ai/servers/work-6dqn/skavio-processing)
 
+**Smithery links:** [Skavio Processing catalog profile](https://smithery.ai/servers/work-6dqn/skavio-processing) identifies this server. The [work-6dqn namespace gateway](https://mcp.smithery.ai/work-6dqn) is a Smithery-managed MCP interface requiring Smithery authorization (`connections:execute`); its available connections depend on the authorized namespace. It is not the canonical Skavio Processing endpoint. Use `https://getskavio.com/processing/mcp` with company OAuth for direct connections. Anonymous checks on 2026-10-27 confirmed the gateway's HTTP 401 and Smithery OAuth metadata, but did not establish access to Skavio tools through it. Never send a Skavio company credential to the namespace gateway.
+
 ## Discover Skavio MCP tools
 
 **Cursor / Claude Desktop / Claude Code setup:** [step-by-step remote MCP connections](MCP_CLIENT_SETUP.md) · [ready-to-use Cursor JSON](examples/cursor-processing-mcp.json) · [optional Claude Desktop JSON](examples/claude-desktop-processing-mcp.json). Also discover [Skavio USDC micro-APIs](https://github.com/skavio-eu/skavio-agent-tools) and their [MCP client guide](https://github.com/skavio-eu/skavio-agent-tools/blob/main/MCP_CLIENT_SETUP.md).
@@ -10,7 +12,7 @@
 
 - [MCP setup and all available tools](https://getskavio.com/processing/docs/mcp/)
 - [MCP pricing and prepaid company credits](https://getskavio.com/processing/docs/mcp/pricing.html)
-- [Official MCP server manifest](server.json)
+- [Official MCP server manifest](server.json) · [Smithery link roles and verification](smithery-discovery.json)
 - [x402 paid USDC verification micro-APIs](https://getskavio.com/x402/) · [machine-readable x402 discovery](https://getskavio.com/x402/.well-known/x402)
 
 The Processing MCP uses company-scoped prepaid credits; the separate x402 micro-APIs advertise payment-required responses. Neither requires exposing private keys to Skavio.
@@ -269,4 +271,5 @@ curl -i 'https://getskavio.com/x402/v1/usdc/verify?tx_hash=0x98809948204426c574b
 Expect HTTP 402 and decode `PAYMENT-REQUIRED`. Inspect the exact amount, Base USDC asset and recipient before authorizing an x402 wallet client; only then retry the same request. After an ambiguous response, inspect recovery state instead of blindly paying again.
 
 Separate [Skavio PDF, OCR & Document Processing MCP](https://registry.modelcontextprotocol.io/v0.1/servers/io.github.skavio-eu%2Fprocessing/versions/0.2.8), version **0.2.8**, uses company OAuth at `https://getskavio.com/processing/mcp` and shared prepaid credits. [Processing docs](https://getskavio.com/processing/docs/mcp/) explain company ownership and measured jobs. Optional AgentTools relays require the caller's own key and current backend availability; preserve the idempotency key, poll status, download results and verify SHA256. HTTP `/x402/v1/processing` stays disabled.
+
 
