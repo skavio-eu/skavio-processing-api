@@ -2,11 +2,12 @@
   "mcpServers": {
     "skavio-processing": {
       "type": "http",
-      "url": "https://www.skavio.eu/processing/mcp"
+      "url": "https://getskavio.com/processing/mcp"
     },
     "skavio-paid-tools": {
       "type": "http",
-      "url": "https://www.skavio.eu/mcp"
+      "url": "https://getskavio.com/mcp"
     }
   }
 }
+
