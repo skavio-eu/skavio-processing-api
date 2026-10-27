@@ -13,7 +13,7 @@ const id = value => {
 };
 export class SkavioClient {
   #key;
-  constructor(apiKey, {baseUrl = 'https://www.skavio.eu', timeoutMs = 30000, readRetries = 2, allowHttp = false, fetchImpl = fetch} = {}) {
+  constructor(apiKey, {baseUrl = 'https://getskavio.com', timeoutMs = 30000, readRetries = 2, allowHttp = false, fetchImpl = fetch} = {}) {
     const u = new URL(baseUrl);
     if (!apiKey || u.username || u.password || u.search || u.hash || u.pathname !== '/') throw new TypeError('Use API key and base origin');
     if (u.protocol !== 'https:' && !(allowHttp && u.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(u.hostname))) throw new TypeError('HTTPS required');
@@ -174,3 +174,4 @@ export async function verifyWebhook(secret, timestamp, rawBody, signature, {now 
   const supplied = Buffer.from(signature);
   return supplied.length === expected.length && timingSafeEqual(supplied, expected);
 }
+
