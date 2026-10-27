@@ -1,6 +1,6 @@
 import json, os, uuid, requests
 
-BASE = os.getenv("SKAVIO_BASE_URL", "https://www.skavio.eu")
+BASE = os.getenv("SKAVIO_BASE_URL", "https://getskavio.com")
 API_KEY = os.environ["SKAVIO_API_KEY"]
 UPLOAD_IDS = json.loads(os.environ["SKAVIO_BULK_UPLOAD_IDS"])
 if not UPLOAD_IDS:
@@ -37,3 +37,4 @@ r = requests.post(BASE + f"/v1/bulks/{bulk_id}/seal", headers=headers, timeout=3
 r.raise_for_status()
 print(json.dumps(r.json(), indent=2))
 print("Bulk ID:", bulk_id)
+

@@ -3,7 +3,7 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { basename } from 'node:path';
 if (!process.env.SKAVIO_API_KEY || !process.env.SKAVIO_IDEMPOTENCY_KEY) throw new Error('Set SKAVIO_API_KEY and SKAVIO_IDEMPOTENCY_KEY');
 const source = process.env.SKAVIO_SOURCE || 'sample-invoice.txt';
-const base = 'https://www.skavio.eu';
+const base = 'https://getskavio.com';
 const auth = { Authorization: `Bearer ${process.env.SKAVIO_API_KEY}` };
 async function json(path, options = {}) {
   const r = await fetch(base + path, { signal: AbortSignal.timeout(180000), ...options,
@@ -39,4 +39,5 @@ if (!r.ok) throw new Error('Download failed');
 await mkdir('results', { recursive: true });
 await writeFile('results/' + basename(file.name), Buffer.from(await r.arrayBuffer()));
 console.log('Completed:', job.id, 'charged credits:', job.charged_credits);
+
 

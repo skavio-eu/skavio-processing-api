@@ -1,5 +1,5 @@
 // Node.js 22+. Use previously uploaded IDs and persist the exact payload/key.
-const base = (process.env.SKAVIO_API_BASE || "https://www.skavio.eu").replace(/\/$/, "");
+const base = (process.env.SKAVIO_API_BASE || "https://getskavio.com").replace(/\/$/, "");
 const key = process.env.SKAVIO_API_KEY;
 const ids = JSON.parse(process.env.SKAVIO_UPLOAD_IDS);
 const idem = process.env.SKAVIO_BATCH_IDEMPOTENCY_KEY;
@@ -25,3 +25,4 @@ while (!["completed", "partial", "failed"].includes(batch.status)) {
 }
 console.log(JSON.stringify(batch, null, 2));
 // Download /v1/batches/{id}/results.zip with the same Bearer authentication.
+

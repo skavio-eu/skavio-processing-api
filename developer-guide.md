@@ -6,11 +6,11 @@ See [governance-guide.md](governance-guide.md) for usage, budgets, key expiry, p
 
 Contract snapshot: **1.6.0 + Pricing V2**, 2026-10-04. API route version: **/v1**.
 
-Live documentation: https://www.skavio.eu/api/docs/
+Live documentation: https://getskavio.com/api/docs/
 
 ## Your first processing job
 
-API base: https://www.skavio.eu/v1. Create a Skavio account and company profile in the company workspace, then create a read/write API key. The secret is shown once. A company receives 1,000 trial credits; availability is subject to the current signup policy.
+API base: https://getskavio.com/v1. Create a Skavio account and company profile in the company workspace, then create a read/write API key. The secret is shown once. A company receives 1,000 trial credits; availability is subject to the current signup policy.
 
 Upload the source, estimate its price, submit the job with a stable idempotency key, poll until terminal status, then download the results. Do not put API keys in frontend code.
 
@@ -18,7 +18,7 @@ Upload the source, estimate its price, submit the job with a stable idempotency 
 
 ```
 export SKAVIO_API_KEY='YOUR_KEY'
-curl -sS https://www.skavio.eu/v1/uploads \
+curl -sS https://getskavio.com/v1/uploads \
   -H "Authorization: Bearer $SKAVIO_API_KEY" \
   -F 'files=@invoice.pdf'
 
@@ -31,21 +31,21 @@ curl -sS https://www.skavio.eu/v1/uploads \
   "max_credits": 200
 }
 
-curl -sS https://www.skavio.eu/v1/estimate \
+curl -sS https://getskavio.com/v1/estimate \
   -H "Authorization: Bearer $SKAVIO_API_KEY" \
   -H 'Content-Type: application/json' --data-binary @request.json
 
 \# Before submission, replace max_credits with the estimate returned above.
-curl -sS https://www.skavio.eu/v1/jobs \
+curl -sS https://getskavio.com/v1/jobs \
   -H "Authorization: Bearer $SKAVIO_API_KEY" \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: invoice-run-2026-001' \
   --data-binary @request.json
 
-curl -sS https://www.skavio.eu/v1/jobs/JOB_ID \
+curl -sS https://getskavio.com/v1/jobs/JOB_ID \
   -H "Authorization: Bearer $SKAVIO_API_KEY"
 
-curl -fS https://www.skavio.eu/v1/jobs/JOB_ID/results/0 \
+curl -fS https://getskavio.com/v1/jobs/JOB_ID/results/0 \
   -H "Authorization: Bearer $SKAVIO_API_KEY" -o data.xlsx
 ```
 
@@ -203,7 +203,7 @@ def verify(secret, timestamp, raw_body, signature):
 
 ```
 import os, time, uuid, requests
-base = "https://www.skavio.eu"
+base = "https://getskavio.com"
 headers = {"Authorization": "Bearer " + os.environ["SKAVIO_API_KEY"]}
 with open("invoice.pdf", "rb") as source:
     r = requests.post(base + "/v1/uploads", headers=headers,
@@ -248,7 +248,7 @@ with open(result["name"], "wb") as output:
 // Node.js 22+; server-side only.
 import { readFile, writeFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
-const base = 'https://www.skavio.eu';
+const base = 'https://getskavio.com';
 const auth = { Authorization: `Bearer ${process.env.SKAVIO_API_KEY}` };
 async function json(path, options = {}) {
   const r = await fetch(base + path, { ...options,
@@ -325,3 +325,4 @@ See [storage-guide.md](storage-guide.md) for S3 uploads, imports, retention and 
 ## API 1.9.0 controls and notifications
 
 Bulk pause and cancel require Idempotency-Key and enforce company isolation. Pause prevents new child admission; accepted jobs drain and settle once. Cancel is final and prevents further dispatch. GET /v1/notifications and GET /v1/notifications/settings are tenant-scoped. PUT /v1/notifications/settings requires a company administrator web session. Notifications are disabled by default; email requires configured transport. Frozen events are deduplicated and retried within a bounded delivery window. Email follows the current company billing address and supports cs/de/en.
+

@@ -1,5 +1,5 @@
 import os, time, pathlib, requests
-base = "https://www.skavio.eu"
+base = "https://getskavio.com"
 headers = {"Authorization": "Bearer " + os.environ["SKAVIO_API_KEY"]}
 source_path = pathlib.Path(os.environ.get("SKAVIO_SOURCE", "sample-invoice.txt"))
 idem = os.environ["SKAVIO_IDEMPOTENCY_KEY"]  # Persist and reuse for the same request.
@@ -38,4 +38,5 @@ pathlib.Path("results").mkdir(exist_ok=True)
 with (pathlib.Path("results") / pathlib.Path(result["name"]).name).open("wb") as output:
     output.write(r.content)
 print("Completed:", job_id, "charged credits:", job["charged_credits"])
+
 

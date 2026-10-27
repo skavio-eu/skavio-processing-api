@@ -1,6 +1,6 @@
 """Quote and submit previously uploaded files. Persist IDs and keys before running."""
 import json, os, time, urllib.request
-base = os.environ.get("SKAVIO_API_BASE", "https://www.skavio.eu").rstrip("/")
+base = os.environ.get("SKAVIO_API_BASE", "https://getskavio.com").rstrip("/")
 key = os.environ["SKAVIO_API_KEY"]
 ids = json.loads(os.environ["SKAVIO_UPLOAD_IDS"])
 idem = os.environ["SKAVIO_BATCH_IDEMPOTENCY_KEY"]
@@ -24,3 +24,4 @@ while batch["status"] not in {"completed", "partial", "failed"}:
     batch = request("GET", "/v1/batches/" + batch["id"])
 print(json.dumps(batch, indent=2))
 # Download /v1/batches/{id}/results.zip with the same Bearer authentication.
+
