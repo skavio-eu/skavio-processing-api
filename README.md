@@ -1,5 +1,7 @@
 # Skavio Processing API
 
+[![smithery badge](https://smithery.ai/badge/work-6dqn/skavio-processing)](https://smithery.ai/servers/work-6dqn/skavio-processing)
+
 ## Discover Skavio MCP tools
 
 **Cursor / Claude Desktop / Claude Code setup:** [step-by-step remote MCP connections](MCP_CLIENT_SETUP.md) · [ready-to-use Cursor JSON](examples/cursor-processing-mcp.json) · [optional Claude Desktop JSON](examples/claude-desktop-processing-mcp.json). Also discover [Skavio USDC micro-APIs](https://github.com/skavio-eu/skavio-agent-tools) and their [MCP client guide](https://github.com/skavio-eu/skavio-agent-tools/blob/main/MCP_CLIENT_SETUP.md).
