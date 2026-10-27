@@ -1,8 +1,8 @@
 # Skavio Processing MCP — Cursor & Claude Desktop connection
 
-**Provided by:** [Skavio LLC](https://www.skavio.eu/)
-**Authenticated remote endpoint:** `https://www.skavio.eu/processing/mcp` (MCP Streamable HTTP).
-**Separate USDC micro-APIs:** `https://www.skavio.eu/mcp`.
+**Provided by:** [Skavio LLC](https://getskavio.com/)
+**Authenticated remote endpoint:** `https://getskavio.com/processing/mcp` (MCP Streamable HTTP).
+**Separate USDC micro-APIs:** `https://getskavio.com/mcp`.
 
 Use the company's **MCP OAuth flow or an explicitly issued company MCP credential**; a generic Skavio Processing API key is **not** the MCP credential.
 
@@ -15,11 +15,11 @@ Use the company's **MCP OAuth flow or an explicitly issued company MCP credentia
   "mcpServers": {
     "skavio-processing": {
       "type": "http",
-      "url": "https://www.skavio.eu/processing/mcp"
+      "url": "https://getskavio.com/processing/mcp"
     },
     "skavio-paid-tools": {
       "type": "http",
-      "url": "https://www.skavio.eu/mcp"
+      "url": "https://getskavio.com/mcp"
     }
   }
 }
@@ -31,8 +31,8 @@ Place it in `.cursor/mcp.json` inside your project or `~/.cursor/mcp.json` for y
 
 In **Settings → Connectors → Add custom connector**, create:
 
-- **Skavio Processing** with URL `https://www.skavio.eu/processing/mcp`; complete the service's OAuth login.
-- **Skavio Paid Tools** with URL `https://www.skavio.eu/mcp`; free capability discovery is public.
+- **Skavio Processing** with URL `https://getskavio.com/processing/mcp`; complete the service's OAuth login.
+- **Skavio Paid Tools** with URL `https://getskavio.com/mcp`; free capability discovery is public.
 
 No local JSON or API key is needed for adding these *remote connectors*. Authentication is still required to execute Processing tools. Native connector availability depends on the Claude client/account.
 
@@ -43,11 +43,11 @@ For local STDIO compatibility in Claude Desktop, [this sample JSON](examples/cla
   "mcpServers": {
     "skavio-processing": {
       "command": "npx",
-      "args": ["-y", "mcp-remote", "https://www.skavio.eu/processing/mcp"]
+      "args": ["-y", "mcp-remote", "https://getskavio.com/processing/mcp"]
     },
     "skavio-paid-tools": {
       "command": "npx",
-      "args": ["-y", "mcp-remote", "https://www.skavio.eu/mcp"]
+      "args": ["-y", "mcp-remote", "https://getskavio.com/mcp"]
     }
   }
 }
@@ -58,8 +58,8 @@ Save in `claude_desktop_config.json` and restart Claude Desktop. This is an opti
 ## Claude Code
 
 ```bash
-claude mcp add --transport http skavio-processing https://www.skavio.eu/processing/mcp
-claude mcp add --transport http skavio-paid-tools https://www.skavio.eu/mcp
+claude mcp add --transport http skavio-processing https://getskavio.com/processing/mcp
+claude mcp add --transport http skavio-paid-tools https://getskavio.com/mcp
 ```
 
 Perform OAuth and review tool permissions in the client.
@@ -71,6 +71,7 @@ Perform OAuth and review tool permissions in the client.
 - **x402 payment**: USDC micro-APIs use native USDC on Base. A plain MCP client or the `mcp-remote` adapter does **not** automatically sign or pay an x402 challenge. Use a compatible payment client and explicit wallet authorization.
 - **Never** store secrets in `.cursor/mcp.json` committed to a public repository or paste keys into a chat.
 
-Official details: [MCP overview](https://www.skavio.eu/processing/docs/mcp/), [processing credits](https://www.skavio.eu/processing/docs/mcp/pricing.html), [Agent Tools install and examples](https://github.com/skavio-eu/skavio-agent-tools/blob/main/MCP_CLIENT_SETUP.md), [official MCP Registry](https://registry.modelcontextprotocol.io/v0/servers?search=skavio) and [PayAPI Market](https://payapi.market/) (third-party marketplace; Skavio submissions still awaiting approval).
+Official details: [MCP overview](https://getskavio.com/processing/docs/mcp/), [processing credits](https://getskavio.com/processing/docs/mcp/pricing.html), [Agent Tools install and examples](https://github.com/skavio-eu/skavio-agent-tools/blob/main/MCP_CLIENT_SETUP.md), [official MCP Registry](https://registry.modelcontextprotocol.io/v0/servers?search=skavio) and [PayAPI Market](https://payapi.market/) (third-party marketplace; Skavio submissions still awaiting approval).
 
 **Verification 2026-10-16:** `/processing/mcp` enforces HTTP 401 with OAuth resource metadata for anonymous calls; `/mcp` answered MCP `initialize` and returned 18 tool definitions. A successful paid settlement, client OAuth UI completion, or funded customer call **has not been established** by those probes.
+
