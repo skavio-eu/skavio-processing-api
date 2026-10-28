@@ -1,5 +1,7 @@
 # Skavio Processing API
 
+[![Skavio Processing MCP — MCPRush publisher listing](https://mcprush.com/badge/processing-mcp/card.svg)](https://mcprush.com/to/processing-mcp?ref=badge)
+
 [![smithery badge](https://smithery.ai/badge/work-6dqn/skavio-processing)](https://smithery.ai/servers/work-6dqn/skavio-processing)
 
 **Smithery links:** [Skavio Processing catalog profile](https://smithery.ai/servers/work-6dqn/skavio-processing) identifies this server. The [work-6dqn namespace gateway](https://mcp.smithery.ai/work-6dqn) is a Smithery-managed MCP interface requiring Smithery authorization (`connections:execute`); its available connections depend on the authorized namespace. It is not the canonical Skavio Processing endpoint. Use `https://getskavio.com/processing/mcp` with company OAuth for direct connections. Anonymous checks on 2026-10-27 confirmed the gateway's HTTP 401 and Smithery OAuth metadata, but did not establish access to Skavio tools through it. Never send a Skavio company credential to the namespace gateway.
