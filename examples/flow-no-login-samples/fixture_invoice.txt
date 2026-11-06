@@ -1,0 +1,9 @@
+FICTIONAL SAMPLE — NOT A CUSTOMER DOCUMENT
+Supplier: Example Supplies LLC
+Invoice: INV-2026-014
+Date: 2026-10-12
+Currency: USD
+Subtotal: 100.00
+Tax: 19.00
+Total: 119.00
+Review: illustrative_only

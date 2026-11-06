@@ -1,5 +1,9 @@
 # Skavio Processing API
 
+
+**New no-account integration example:** [Fictional Flow invoice to reviewable CSV](examples/flow-no-login-samples/README.md) — no key, no upload or charges. [Public EN sample gallery](https://getskavio.com/demo/) and [DE examples](https://dokutakt.de/demo/). For actual authenticated processing use the maintained quickstarts below and obtain a quote before submitting.
+
+
 [![Skavio Processing MCP — MCPRush publisher listing](https://mcprush.com/badge/processing-mcp/card.svg)](https://mcprush.com/to/processing-mcp?ref=badge)
 
 [![smithery badge](https://smithery.ai/badge/work-6dqn/skavio-processing)](https://smithery.ai/servers/work-6dqn/skavio-processing)
