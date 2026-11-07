@@ -1,12 +1,12 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.skavio-eu/processing",
-  "description": "Company OAuth PDF, OCR, invoice and audio processing with measured jobs and prepaid company credits.",
+  "description": "OAuth PDF, OCR, invoice and audio processing with prepaid company credits; card or USDC funding.",
   "repository": {
     "url": "https://github.com/skavio-eu/skavio-processing-api",
     "source": "github"
   },
-  "version": "0.2.8",
+  "version": "0.2.9",
   "websiteUrl": "https://getskavio.com/processing/docs/mcp/",
   "remotes": [
     {
@@ -25,7 +25,7 @@
   "_meta": {
     "io.modelcontextprotocol.registry/publisher-provided": {
       "authentication": "https://getskavio.com/processing/docs/mcp/authentication.html",
-      "billing": "Prepaid company credits in the shared Skavio wallet; no separate MCP wallet or price list.",
+      "billing": "Prepaid credits (1 USD=1000 credits) from correctly authenticated company wallet. Administrator web card or USDC funding depends on account; card checkout is not an MCP tool; no real paid card-to-MCP E2E yet.",
       "category": "productivity",
       "dashboard": "https://getskavio.com/dashboard/",
       "documentation": "https://getskavio.com/processing/docs/mcp/",
@@ -52,4 +52,3 @@
   },
   "title": "Skavio PDF, OCR & Document Processing MCP"
 }
-
