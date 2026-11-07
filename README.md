@@ -23,6 +23,8 @@
 
 The Processing MCP uses company-scoped prepaid credits; the separate x402 micro-APIs advertise payment-required responses. Neither requires exposing private keys to Skavio.
 
+**Card-funded prepaid processing:** Processing MCP uses the authenticated company's Skavio wallet (**1 USD = 1,000 credits**). Only a company administrator funds the correct company wallet through the website checkout; an MCP agent cannot charge a card. The separate [Agent Tools Dashboard](https://getskavio.com/agent-tools/dashboard.html) offers Stripe-hosted **$5–$500** card top-ups or USDC for its bound Agent Tools company wallet and eligible processing jobs paid with `payment_mode=prepaid`. Company credentials are NOT interchangeable. The four public blockchain-proof/DNS tools on `https://getskavio.com/mcp` and standalone x402 HTTP API calls remain **native-USDC x402 only**. Card funding and credit debit/refund logic passed controlled tests, but a real paid customer card-to-MCP completed-job E2E has not yet been independently verified.
+
 
 One company-scoped API for document extraction, PDF and image tools, media processing, transcription and meetings.
 
@@ -139,9 +141,9 @@ Use `max_credits` to reject unexpectedly expensive submissions and `GET /v1/wall
 | Meeting | 15 per started minute |
 | File Toolbox audio/video | 4 per started minute |
 
-Nominally 1 EUR = 1,000 credits. Top-ups: EUR10/10,000; EUR25/26,000; EUR50/53,000; EUR100/108,000; EUR250/280,000; EUR500/570,000. A retail EUR6.99/6,990 pack is also available.
+**Current base value: 1 USD = 1,000 credits.** Use [live pricing](https://getskavio.com/pricing/) and the authenticated dashboard for exact supported packs and taxes. Retired EUR pack examples are not current.
 
-Monthly plans: Starter EUR29/30,000 credits; Business EUR79/85,000; Pro EUR199/225,000; Enterprise EUR499/600,000. Paid credits never expire; monthly credits roll over. Current plans share the deployment processing limits.
+Subscriptions and allowances are product-specific: do not assume former EUR plan tiers apply to MCP; verify the latest [live pricing](https://getskavio.com/pricing/).
 
 Web tools and API share one wallet. Submit reserves the measured quote; success charges it once; a permanent failure releases it. Temporary provider outages keep jobs queued with durable checkpoints and reserved credits. Existing quoted jobs and purchased checkout/subscription offers retain their original amounts.
 
@@ -242,7 +244,7 @@ Skavio USDC Payment Verification — x402 API inspects native Circle USDC transf
 
 - HTTP Verify: **0.02 native USDC**; Match: **0.03 USDC**; PDF: **0.05 USDC**. Payment settles separately on **Base** through x402 v2. Inspection supports Base, Polygon, Arbitrum, Optimism, Ethereum, Avalanche and finalized Solana.
 - [API quickstart, schemas, errors and client configurations](https://getskavio.com/x402/docs/) · [three-route discovery](https://getskavio.com/.well-known/x402) · [OpenAPI](https://getskavio.com/x402/openapi.json).
-- [Skavio USDC Payment Verification & Proof MCP](https://registry.modelcontextprotocol.io/v0.1/servers/eu.skavio%2Fpaid-micro-apis/versions/1.1.2), version **1.1.2**. Stable registry namespace and tool IDs are unchanged. Connect using `https://getskavio.com/mcp` (Streamable HTTP).
+- [Skavio USDC Payment Verification & Proof MCP](https://registry.modelcontextprotocol.io/v0.1/servers/eu.skavio%2Fpaid-micro-apis/versions/1.1.5), version **1.1.5**. Stable registry namespace and tool IDs are unchanged. Connect using `https://getskavio.com/mcp` (Streamable HTTP).
 - MCP has four paid blockchain/domain tools (`verify_native_usdc`, `match_native_usdc_payment`, `usdc_transfer_evidence_pdf`, `domain_dns_tls_audit`), two free discovery tools, and twelve separate authenticated AgentTools processing/job/wallet relays. The DNS/TLS audit is 0.05 USDC and is not a vulnerability scan.
 - **A standard MCP client without a wallet x402 extension cannot automatically pay.** Discovery is free. Paid MCP retries preserve `params._meta["x402/payment"]`; HTTP retries use `PAYMENT-SIGNATURE`. Never send a private key or seed phrase. No custody or automatic spending is created by adding a server.
 - PayAPI publishes separate live listings and historical settlement receipts for [HTTP Verify, 0.02 USDC](https://payapi.market/api/skavio-usdc-transaction-verification), [exact recipient/amount Match, 0.03 USDC](https://payapi.market/api/skavio-usdc-recipient-and-amount-match), and [blockchain PDF evidence, 0.05 USDC](https://payapi.market/api/skavio-usdc-verification-and-pdf-payment-evidence). Each route was independently read back on 2026-10-17, and each prior Base USDC receipt was checked read-only. No new payment was made for this documentation update. This is blockchain evidence, not a tax invoice.

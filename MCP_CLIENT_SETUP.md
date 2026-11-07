@@ -6,6 +6,8 @@
 
 Use the company's **MCP OAuth flow or an explicitly issued company MCP credential**; a generic Skavio Processing API key is **not** the MCP credential.
 
+**Payment choice:** Processing MCP spends the correctly bound company's prepaid credits (**1 USD = 1,000 credits**), funded by an authorized account administrator, not an AI agent. Separately, [Agent Tools Dashboard](https://getskavio.com/agent-tools/dashboard.html) supports Stripe-hosted **$5–$500 USD card top-ups** or USDC to its linked company wallet for eligible processing tools. Use the right tenant, endpoint and token; company OAuth and Agent Tools credentials are not interchangeable. Four independent blockchain-proof/DNS calls on /mcp and paid HTTP x402 routes still require a native-USDC wallet client. Stripe unpaid TEST checkout plus controlled ledger QA passed; a real paid external card-to-MCP completed-job E2E has not yet been confirmed.
+
 ## Smithery catalog and namespace gateway
 
 **Smithery links:** [Skavio Processing catalog profile](https://smithery.ai/servers/work-6dqn/skavio-processing) identifies this server. The [work-6dqn namespace gateway](https://mcp.smithery.ai/work-6dqn) is a Smithery-managed MCP interface requiring Smithery authorization (`connections:execute`); its available connections depend on the authorized namespace. It is not the canonical Skavio Processing endpoint. Use `https://getskavio.com/processing/mcp` with company OAuth for direct connections. Anonymous checks on 2026-10-27 confirmed the gateway's HTTP 401 and Smithery OAuth metadata, but did not establish access to Skavio tools through it. Never send a Skavio company credential to the namespace gateway.
