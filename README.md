@@ -1,5 +1,8 @@
 # Skavio Processing API
 
+**New customer MCP onboarding (9 November 2026):** For self-service processing tools, [open the Agent Tools dashboard](https://getskavio.com/agent-tools/dashboard.html), create a company or choose **Continue with Skavio account** using a verified main getskavio.com login. Existing Agent Tools accounts require explicit linking after signing in to both accounts; identical email addresses alone do not grant access. Generate an Agent Tools API key and connect to **`https://getskavio.com/agent-tools/mcp`**. The separate **`/processing/mcp`** documented below remains an **operator-provisioned legacy integration**, not something automatically activated by normal website registration. Company credentials, wallets and credits are not interchangeable. [Current Agent Tools documentation](https://getskavio.com/agent-tools/docs.html).
+
+
 
 **New no-account integration example:** [Fictional Flow invoice to reviewable CSV](examples/flow-no-login-samples/README.md) — no key, no upload or charges. [Public EN sample gallery](https://getskavio.com/demo/) and [DE examples](https://dokutakt.de/demo/). For actual authenticated processing use the maintained quickstarts below and obtain a quote before submitting.
 
